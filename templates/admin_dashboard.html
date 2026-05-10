@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - AYRA Services</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+    <!-- ==================== TOAST CONTAINER ==================== -->
+    <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+    </div>
+
+
+    <!-- Admin Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark admin-navbar">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <div class="brand-logo me-2">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </div>
+                <div>
+                    <span class="brand-name">AYRA</span>
+                    <span class="text-light ms-2">Admin</span>
+                </div>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto me-3">
+                    <li class="nav-item">
+                        <span class="admin-badge">Admin Portal</span>
+                    </li>
+                </ul>
+
+                <div class="dropdown user-dropdown">
+                    <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <div class="user-avatar" style="background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);">
+                            {{ admin_name[0].upper() if admin_name else 'A' }}
+                        </div>
+                        <span class="d-none d-md-inline">{{ admin_name or 'Admin' }}</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li class="dropdown-header">
+                            <strong>{{ admin_name }}</strong>
+                            <br><small class="text-muted">Administrator</small>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="logout()">
+                                <i class="bi bi-box-arrow-right me-2"></i>Logout
+                            </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container-fluid px-4 py-4">
+            <!-- Welcome Section -->
+            <div class="welcome-section mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="welcome-title">Admin Dashboard 🛡️</h1>
+                        <p class="welcome-subtitle mb-0">Monitor users and document processing</p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <span id="currentDateTime" style="color: aliceblue;"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overall Stats Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3 col-6">
+                    <div class="compact-stats-card">
+                        <div class="compact-stats-icon"
+                            style="background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);">
+                            <i class="bi bi-people"></i>
+                        </div>
+                        <div>
+                            <div class="compact-stats-value" id="totalUsers">0</div>
+                            <div class="compact-stats-label">Total Users</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="compact-stats-card">
+                        <div class="compact-stats-icon"
+                            style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                            <i class="bi bi-person-check"></i>
+                        </div>
+                        <div>
+                            <div class="compact-stats-value" id="activeUsers">0</div>
+                            <div class="compact-stats-label">Active Users</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="compact-stats-card">
+                        <div class="compact-stats-icon"
+                            style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <i class="bi bi-files"></i>
+                        </div>
+                        <div>
+                            <div class="compact-stats-value" id="totalDocuments">0</div>
+                            <div class="compact-stats-label">Total Documents</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="compact-stats-card">
+                        <div class="compact-stats-icon"
+                            style="background: linear-gradient(135deg, #002bec 0%, #764ba2 100%);">
+                            <i class="bi bi-file-earmark-check"></i>
+                        </div>
+                        <div>
+                            <div class="compact-stats-value" id="generatedDocs">0</div>
+                            <div class="compact-stats-label">Generated</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Admin Tabs -->
+            <div class="dashboard-tabs-container">
+                <ul class="nav nav-tabs dashboard-tabs" id="adminTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="admin-overview-tab" data-bs-toggle="tab"
+                            data-bs-target="#admin-overview" type="button" role="tab">
+                            <i class="bi bi-graph-up me-2"></i>Overview
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="admin-users-tab" data-bs-toggle="tab" data-bs-target="#admin-users"
+                            type="button" role="tab">
+                            <i class="bi bi-people me-2"></i>Users
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="admin-documents-tab" data-bs-toggle="tab"
+                            data-bs-target="#admin-documents" type="button" role="tab">
+                            <i class="bi bi-files me-2"></i>Documents
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="adminTabsContent">
+                    <!-- Overview Tab -->
+                    <div class="tab-pane fade show active" id="admin-overview" role="tabpanel">
+                        <div class="tab-content-card">
+                            <h5 class="section-title mb-4">
+                                <i class="bi bi-bar-chart-fill text-primary me-2"></i>Document Statistics
+                            </h5>
+
+                            <div class="row g-4 mb-4">
+                                <div class="col-md-3 col-6">
+                                    <div class="mini-stat-card">
+                                        <div class="d-flex align-items-center">
+                                            <div class="mini-stat-icon drafts">
+                                                <i class="bi bi-file-earmark-text"></i>
+                                            </div>
+                                            <div class="ms-3">
+                                                <div class="mini-stat-value" id="overviewDrafts">0</div>
+                                                <div class="mini-stat-label">Drafts</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="mini-stat-card">
+                                        <div class="d-flex align-items-center">
+                                            <div class="mini-stat-icon pending">
+                                                <i class="bi bi-hourglass-split"></i>
+                                            </div>
+                                            <div class="ms-3">
+                                                <div class="mini-stat-value" id="overviewPending">0</div>
+                                                <div class="mini-stat-label">Pending</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="mini-stat-card">
+                                        <div class="d-flex align-items-center">
+                                            <div class="mini-stat-icon approved">
+                                                <i class="bi bi-check-circle"></i>
+                                            </div>
+                                            <div class="ms-3">
+                                                <div class="mini-stat-value" id="overviewApproved">0</div>
+                                                <div class="mini-stat-label">Approved</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="mini-stat-card">
+                                        <div class="d-flex align-items-center">
+                                            <div class="mini-stat-icon generated">
+                                                <i class="bi bi-file-earmark-check"></i>
+                                            </div>
+                                            <div class="ms-3">
+                                                <div class="mini-stat-value" id="overviewGenerated">0</div>
+                                                <div class="mini-stat-label">Generated</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h5 class="section-title mb-4 mt-5">
+                                <i class="bi bi-people-fill text-info me-2"></i>User Activity Summary
+                            </h5>
+                            <div class="table-responsive">
+                                <table class="table data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Email</th>
+                                            <th>Drafts</th>
+                                            <th>Pending</th>
+                                            <th>Approved</th>
+                                            <th>Generated</th>
+                                            <th>Last Login</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="userActivityBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Users Tab -->
+                    <div class="tab-pane fade" id="admin-users" role="tabpanel">
+                        <div class="tab-content-card">
+                            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                                <h5 class="section-title mb-0">
+                                    <i class="bi bi-people-fill text-primary me-2"></i>User Management
+                                </h5>
+                                <button type="button" class="btn btn-primary" onclick="showAddUserModal()">
+                                    <i class="bi bi-person-plus me-1"></i>Add User
+                                </button>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table data-table" id="usersTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Phone</th>
+                                            <th>Status</th>
+                                            <th>Created</th>
+                                            <th>Last Login</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="usersTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="empty-state d-none" id="usersEmptyState">
+                                <i class="bi bi-people"></i>
+                                <h5>No users found</h5>
+                                <p>Add users to get started</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Documents Tab -->
+                    <div class="tab-pane fade" id="admin-documents" role="tabpanel">
+                        <div class="tab-content-card">
+                            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                                <h5 class="section-title mb-0">
+                                    <i class="bi bi-files text-primary me-2"></i>All Documents
+                                </h5>
+                                <div class="d-flex gap-2 flex-wrap align-items-end" id="docsFilterBar">
+
+                                    <!-- Search by User Name -->
+                                    <div style="min-width:200px; flex:1;">
+                                        <label class="form-label"
+                                            style="font-size:0.75rem; font-weight:600; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.35rem;">
+                                            <i class="bi bi-person me-1"></i>User Name
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"
+                                                style="padding:.4rem .65rem; background:var(--rule-soft); border:1.5px solid var(--rule); border-right:none;">
+                                                <i class="bi bi-search"
+                                                    style="font-size:.8rem; color:var(--ink-muted);"></i>
+                                            </span>
+                                            <input type="text" class="form-control" id="filterUserName"
+                                                placeholder="Filter by user…"
+                                                style="border-left:none; border:1.5px solid var(--rule); font-size:.875rem; min-height:38px; padding:.4rem .7rem;"
+                                                oninput="applyDocFilters()">
+                                        </div>
+                                    </div>
+
+                                    <!-- Search by Old Name -->
+                                    <div style="min-width:200px; flex:1;">
+                                        <label class="form-label"
+                                            style="font-size:0.75rem; font-weight:600; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.35rem;">
+                                            <i class="bi bi-file-text me-1"></i>Old Name
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"
+                                                style="padding:.4rem .65rem; background:var(--rule-soft); border:1.5px solid var(--rule); border-right:none;">
+                                                <i class="bi bi-search"
+                                                    style="font-size:.8rem; color:var(--ink-muted);"></i>
+                                            </span>
+                                            <input type="text" class="form-control" id="filterOldName"
+                                                placeholder="Filter by old name…"
+                                                style="border-left:none; border:1.5px solid var(--rule); font-size:.875rem; min-height:38px; padding:.4rem .7rem;"
+                                                oninput="applyDocFilters()">
+                                        </div>
+                                    </div>
+
+                                    <!-- Clear All -->
+                                    <div style="align-self:flex-end;">
+                                        <button class="btn btn-sm btn-secondary" onclick="clearDocFilters()"
+                                            title="Clear all filters"
+                                            style="height:38px; padding:.3rem .8rem; font-size:.8rem; font-weight:600; border:1.5px solid var(--rule);">
+                                            <i class="bi bi-x-circle me-1"></i>Clear
+                                        </button>
+                                    </div>
+
+                                    <!-- Bulk Download -->
+                                    <div style="align-self:flex-end;">
+                                        <button type="button" class="btn btn-success btn-sm" id="bulkDownloadBtn"
+                                            onclick="downloadSelectedDocs()" disabled
+                                            style="height:38px; padding:.3rem .9rem; font-size:.8rem; font-weight:600;">
+                                            <i class="bi bi-download me-1"></i>Download
+                                            (<span id="selectedCount">0</span>)
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Active filter info bar (shown when filters are active) -->
+                                <div id="filterInfoBar" class="d-none"
+                                    style="display:flex; align-items:center; gap:.5rem; padding:.5rem .875rem; background:var(--rule-soft); border-radius:var(--radius-md); border:1px solid var(--rule); font-size:.8125rem; color:var(--ink-muted); margin-top:.75rem;">
+                                    <i class="bi bi-funnel-fill" style="color:var(--ink);"></i>
+                                    <span id="filterInfoText"></span>
+                                    <button class="btn btn-link btn-sm p-0 ms-auto" onclick="clearDocFilters()"
+                                        style="font-size:.75rem; color:var(--ink-muted); text-decoration:none; font-weight:600;">
+                                        Clear filters
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Search Results Info -->
+                            <div id="searchResultsInfo" class="alert alert-info py-2 d-none">
+                                <i class="bi bi-funnel me-2"></i>
+                                <span id="searchResultsText"></span>
+                                <button class="btn btn-sm btn-link p-0 ms-2" onclick="clearUserSearch()">Clear
+                                    filter</button>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table data-table" id="adminDocsTable">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40px;">
+                                                <input type="checkbox" class="form-check-input" id="selectAllDocs"
+                                                    onchange="toggleSelectAllDocs()">
+                                            </th>
+                                            <th>User</th>
+                                            <th>Old Name</th>
+                                            <th>Template</th>
+                                            <th>Status</th>
+                                            <th>Published</th>
+                                            <th>Modified</th>
+                                            <th style="width: 380px;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminDocsTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="empty-state d-none" id="adminDocsEmptyState">
+                                <i class="bi bi-files"></i>
+                                <h5>No documents found</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container-fluid px-4">
+            <span class="fw-bold"><i class="bi bi-shield-lock-fill me-2"></i>AYRA Services Admin</span>
+            <span class="ms-3 small">&copy; 2026 - Administration Portal</span>
+        </div>
+    </footer>
+
+    <!-- Add User Modal -->
+    <div class="modal fade" id="addUserModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" style="color:white"><i class="bi bi-person-plus me-2"></i>Add New User</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addUserForm">
+                        <div class="mb-3">
+                            <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="newUserName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email (Username) <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="newUserEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="newUserPhone" maxlength="10">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="newUserPassword" value="Ayraservices@123"
+                                    placeholder="Enter password">
+                                <button type="button" class="btn btn-outline-secondary"
+                                    onclick="generateRandomPassword()" title="Generate random password">
+                                    <i class="bi bi-shuffle"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary"
+                                    onclick="resetToDefaultPassword()" title="Reset to default">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                You can type a custom password, generate random, or use default
+                            </small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="createUser()">
+                        <i class="bi bi-check-lg me-1"></i>Create User
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div class="modal fade" id="editUserModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" style="color:white"><i class="bi bi-pencil me-2"></i>Edit User</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editUserId">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editUserName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="editUserEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="editUserPhone" maxlength="10">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">New Password <small class="text-muted">(leave blank to keep
+                                current)</small></label>
+                        <input type="password" class="form-control" id="editUserPassword"
+                            placeholder="Enter new password">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="updateUser()">
+                        <i class="bi bi-check-lg me-1"></i>Update
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Document Modal - Full Form with CD Preview -->
+    <div class="modal fade edit-doc-modal" id="editDocModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" style="color:white">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Document
+                        <span class="badge bg-secondary ms-2" id="editDocTemplateBadge"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="editDocBody">
+                    <!-- Dynamic form will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveDocumentChanges()">
+                        <i class="bi bi-check-lg me-1"></i>Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Document Modal with CD Preview -->
+    <div class="modal fade" id="viewDocModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" style="color:white"><i class="bi bi-eye me-2"></i>View Document</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="viewDocBody">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Preview Modal -->
+    <div class="modal fade print-preview-modal" id="printPreviewModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header no-print"
+                    style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                    <h5 class="modal-title text-white">
+                        <i class="bi bi-printer me-2"></i>Print Preview - All Documents
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="printPreviewBody">
+                    <!-- Print preview content will be loaded here -->
+                </div>
+                <div class="modal-footer no-print">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="printDocuments()">
+                        <i class="bi bi-printer me-1"></i>Print All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== PRINT PROGRESS MODAL (with Cancel) ==================== -->
+    <div class="modal fade" id="printProgressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:520px;">
+            <div class="modal-content"
+                style="border-radius:var(--radius-xl); border:1px solid var(--rule); overflow:hidden; box-shadow:var(--shadow-xl);">
+
+                <!-- Header (with Cancel button) -->
+                <div
+                    style="background:var(--ink); padding:1.25rem 1.5rem; display:flex; align-items:center; gap:.875rem;">
+                    <div
+                        style="width:36px; height:36px; background:rgba(255,255,255,.12); border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <i class="bi bi-printer" style="color:#fff; font-size:1rem;"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="color:#fff; font-weight:700; font-size:.9375rem; line-height:1.2;"
+                            id="printProgressTitle">
+                            Generating PDF…
+                        </div>
+                        <div style="color:rgba(255,255,255,.55); font-size:.75rem;" id="printProgressSubtitle">
+                            Please wait while documents are being processed
+                        </div>
+                    </div>
+                    <!-- [NEW] Cancel button in header -->
+                    <button class="btn btn-sm d-none" id="printCancelHeaderBtn" onclick="cancelCurrentPrintJob()"
+                        style="background:rgba(255,255,255,.15); color:#fff; border:1px solid rgba(255,255,255,.3); font-weight:600; font-size:.75rem; padding:.35rem .75rem; white-space:nowrap; border-radius:var(--radius-md); transition:all .2s ease;"
+                        onmouseover="this.style.background='rgba(220,38,38,.8)'; this.style.borderColor='rgba(220,38,38,.8)';"
+                        onmouseout="this.style.background='rgba(255,255,255,.15)'; this.style.borderColor='rgba(255,255,255,.3)';">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <div style="padding:1.25rem 1.5rem; background:#fff;">
+
+                    <!-- Overall progress bar -->
+                    <div style="margin-bottom:1rem;">
+                        <div
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.375rem;">
+                            <span
+                                style="font-size:.75rem; font-weight:600; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.05em;">Progress</span>
+                            <span style="font-size:.75rem; font-weight:700; color:var(--ink);"
+                                id="printProgressPct">0%</span>
+                        </div>
+                        <div
+                            style="height:6px; background:var(--rule-soft); border-radius:var(--radius-full); overflow:hidden;">
+                            <div id="printProgressBar"
+                                style="height:100%; width:0%; background:var(--ink); border-radius:var(--radius-full); transition:width .4s ease;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step log -->
+                    <div id="printStepLog"
+                        style="background:var(--rule-soft); border:1px solid var(--rule); border-radius:var(--radius-lg); padding:.875rem 1rem; min-height:160px; max-height:280px; overflow-y:auto; font-family:'DM Sans', monospace; font-size:.8125rem; line-height:1.6;">
+                        <!-- Steps injected here by JS -->
+                    </div>
+
+                    <!-- Action buttons - Done (hidden until done) -->
+                    <div id="printDoneActions" class="d-none"
+                        style="margin-top:1rem; display:flex; gap:.75rem; justify-content:flex-end;">
+                        <button class="btn btn-secondary btn-sm" onclick="closePrintProgress()"
+                            style="font-weight:600; padding:.45rem 1rem;">
+                            Close
+                        </button>
+                        <button class="btn btn-primary btn-sm" id="openPdfBtn"
+                            style="font-weight:600; padding:.45rem 1.25rem;">
+                            <i class="bi bi-box-arrow-up-right me-1"></i>Open PDF
+                        </button>
+                    </div>
+
+                    <!-- [NEW] Action buttons - Cancelled (hidden until cancelled) -->
+                    <div id="printCancelledActions" class="d-none"
+                        style="margin-top:1rem; display:flex; gap:.75rem; justify-content:flex-end;">
+                        <button class="btn btn-secondary btn-sm" onclick="closePrintProgress()"
+                            style="font-weight:600; padding:.45rem 1rem;">
+                            Close
+                        </button>
+                        <button class="btn btn-primary btn-sm" id="retryCancelledBtn"
+                            style="font-weight:600; padding:.45rem 1.25rem;">
+                            <i class="bi bi-arrow-repeat me-1"></i>Retry
+                        </button>
+                    </div>
+
+                    <!-- Action buttons - Error (hidden until error) -->
+                    <div id="printErrorActions" class="d-none" 
+                        style="margin-top:1rem; display:flex; gap:.75rem; justify-content:flex-end;">
+                        <button class="btn btn-secondary btn-sm" onclick="closePrintProgress()"
+                            style="font-weight:600; padding:.45rem 1rem;">
+                            Close
+                        </button>
+                        <button class="btn btn-primary btn-sm" id="retryPrintBtn"
+                            style="font-weight:600; padding:.45rem 1.25rem;">
+                            <i class="bi bi-arrow-repeat me-1"></i>Retry
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="toast" class="toast" role="alert">
+            <div class="toast-header">
+                <i id="toastIcon" class="bi me-2"></i>
+                <strong id="toastTitle" class="me-auto"></strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div id="toastBody" class="toast-body"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/admin_dashboard.js') }}"></script>
+
+    <script>
+        /* ================================================================
+           DOCUMENT FILTER STATE
+        ================================================================ */
+        let _docFilterStatus = 'all';
+        let _allAdminDocs = []; // raw list fetched from API — set by your existing loadAdminDocs()
+
+        /* ── Status filter button click ──────────────────────────────── */
+        function setStatusFilter(status, btn) {
+            _docFilterStatus = status;
+
+            // Update button styles
+            document.querySelectorAll('.doc-status-btn').forEach(b => {
+                const active = b === btn;
+                b.style.background = active ? 'var(--ink)' : '#fff';
+                b.style.color = active ? '#fff' : 'var(--ink-muted)';
+                b.style.borderColor = active ? 'var(--ink)' : 'var(--rule)';
+            });
+
+            applyDocFilters();
+        }
+
+        /* ── Apply all active filters to the table ───────────────────── */
+        function applyDocFilters() {
+            const userName = (document.getElementById('filterUserName')?.value || '').trim().toLowerCase();
+            const oldName = (document.getElementById('filterOldName')?.value || '').trim().toLowerCase();
+            const status = _docFilterStatus;
+
+            // Walk every row in the table
+            const rows = document.querySelectorAll('#adminDocsTableBody tr');
+            let visible = 0;
+
+            rows.forEach(row => {
+                const rowUser = (row.dataset.userName || '').toLowerCase();
+                const rowOld = (row.dataset.oldName || '').toLowerCase();
+                const rowStatus = (row.dataset.status || '').toLowerCase();
+
+                const matchUser = !userName || rowUser.includes(userName);
+                const matchOld = !oldName || rowOld.includes(oldName);
+                const matchStatus = (status === 'all') || (rowStatus === status);
+
+                const show = matchUser && matchOld && matchStatus;
+                row.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+
+            // Update info bar
+            updateFilterInfoBar(userName, oldName, status, visible, rows.length);
+
+            // Show/hide empty state
+            const emptyState = document.getElementById('adminDocsEmptyState');
+            if (emptyState) emptyState.classList.toggle('d-none', visible > 0);
+        }
+
+        function updateFilterInfoBar(userName, oldName, status, visible, total) {
+            const bar = document.getElementById('filterInfoBar');
+            const infoText = document.getElementById('filterInfoText');
+            if (!bar || !infoText) return;
+
+            const parts = [];
+            if (userName) parts.push(`User: "<strong>${escapeHtml(userName)}</strong>"`);
+            if (oldName) parts.push(`Old Name: "<strong>${escapeHtml(oldName)}</strong>"`);
+            if (status !== 'all') parts.push(`Status: <strong>${capitalize(status)}</strong>`);
+
+            if (parts.length === 0) {
+                bar.classList.add('d-none');
+            } else {
+                bar.classList.remove('d-none');
+                infoText.innerHTML = `${parts.join(' · ')} — showing <strong>${visible}</strong> of <strong>${total}</strong> records`;
+            }
+        }
+
+        function clearDocFilters() {
+            const uInput = document.getElementById('filterUserName');
+            const oInput = document.getElementById('filterOldName');
+            if (uInput) uInput.value = '';
+            if (oInput) oInput.value = '';
+
+            // Reset status to All
+            const allBtn = document.querySelector('.doc-status-btn[data-status="all"]');
+            if (allBtn) setStatusFilter('all', allBtn);
+            else applyDocFilters();
+        }
+
+        /* ── Helper: make sure rows have data-* attrs ────────────────── */
+        // Call this inside your existing renderAdminDocs() / similar function
+        // after each <tr> is built:
+        //   tr.dataset.userName = doc.user_name || '';
+        //   tr.dataset.oldName  = doc.old_name  || '';
+        //   tr.dataset.status   = doc.status    || '';
+        //
+        // If you build rows as innerHTML strings, add:
+        //   data-user-name="${escapeHtml(doc.user_name)}"
+        //   data-old-name="${escapeHtml(doc.old_name)}"
+        //   data-status="${doc.status}"
+        // to the <tr> element.
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function capitalize(s) {
+            return s.charAt(0).toUpperCase() + s.slice(1);
+        }
+
+        /* ================================================================
+           PRINT PROGRESS MODAL (with Cancel Support)
+        ================================================================ */
+
+        let _printModal = null;
+        let _currentPrintDocId = null;
+        let _currentPdfUrl = null;
+        let _printAbortController = null; // [NEW] AbortController
+
+        /* ── Entry point – called by the Print button ────────────────── */
+        function showPrintProgress(docId) {
+            _currentPrintDocId = docId;
+            _currentPdfUrl = null;
+            _printAbortController = null;
+
+            // Track in active jobs
+            activePrintJobs[docId] = null; // jobId assigned when server responds
+
+            // Reset UI
+            resetPrintModal();
+
+            // Show modal
+            if (!_printModal) {
+                _printModal = new bootstrap.Modal(document.getElementById('printProgressModal'));
+            }
+            _printModal.show();
+
+            // Start the request
+            startPrintJob(docId);
+        }
+
+        function resetPrintModal() {
+            setProgressBar(0);
+            document.getElementById('printProgressTitle').textContent = 'Generating PDF…';
+            document.getElementById('printProgressSubtitle').textContent = 'Please wait while documents are being processed';
+            document.getElementById('printStepLog').innerHTML = '';
+            document.getElementById('printDoneActions').classList.add('d-none');
+            document.getElementById('printErrorActions').classList.add('d-none');
+            document.getElementById('printCancelledActions').classList.add('d-none'); // [NEW]
+
+            // [NEW] Show cancel button in header
+            const cancelBtn = document.getElementById('printCancelHeaderBtn');
+            if (cancelBtn) {
+                cancelBtn.classList.remove('d-none');
+                cancelBtn.disabled = false;
+                cancelBtn.innerHTML = '<i class="bi bi-x-circle me-1"></i>Cancel';
+            }
+        }
+
+        function closePrintProgress() {
+            if (_printModal) _printModal.hide();
+            if (_currentPrintDocId) {
+                delete activePrintJobs[_currentPrintDocId];
+            }
+        }
+
+        /* ── [NEW] Cancel from within the progress modal ────────────── */
+        async function cancelCurrentPrintJob() {
+            const docId = _currentPrintDocId;
+            if (!docId) return;
+
+            const jobId = activePrintJobs[docId];
+            const cancelBtn = document.getElementById('printCancelHeaderBtn');
+            if (cancelBtn) {
+                cancelBtn.disabled = true;
+                cancelBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Cancelling…';
+            }
+
+            addStep('info', 'Cancellation requested — stopping print job…');
+
+            // Abort the fetch immediately
+            if (_printAbortController) {
+                _printAbortController.abort();
+            }
+
+            if (jobId) {
+                try {
+                    const resp = await fetch(`/api/admin/documents/${docId}/cancel-print`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            job_id: jobId
+                        })
+                    });
+                    const data = await resp.json();
+                    if (data.success) {
+                        addStep('error', 'Print job cancelled by user.');
+                    } else {
+                        addStep('info', data.message || 'Cancel request sent.');
+                    }
+                } catch (err) {
+                    addStep('info', 'Cancel signal sent (fetch aborted).');
+                }
+            } else {
+                addStep('info', 'Fetch aborted — no server job registered yet.');
+            }
+
+            showCancelledState();
+        }
+
+        /* ── [NEW] Show cancelled UI state ───────────────────────────── */
+        function showCancelledState() {
+            setProgressBar(100, false, '#f59e0b'); // amber
+            document.getElementById('printProgressTitle').textContent = 'Print Cancelled';
+            document.getElementById('printProgressSubtitle').textContent = 'The print job was cancelled. You can retry if needed.';
+
+            // Hide cancel button
+            const cancelBtn = document.getElementById('printCancelHeaderBtn');
+            if (cancelBtn) cancelBtn.classList.add('d-none');
+
+            // Show cancelled actions, hide others
+            document.getElementById('printDoneActions').classList.add('d-none');
+            document.getElementById('printErrorActions').classList.add('d-none');
+            document.getElementById('printCancelledActions').classList.remove('d-none');
+
+            const retryBtn = document.getElementById('retryCancelledBtn');
+            if (retryBtn) {
+                retryBtn.onclick = () => {
+                    resetPrintModal();
+                    startPrintJob(_currentPrintDocId);
+                };
+            }
+
+            if (_currentPrintDocId) delete activePrintJobs[_currentPrintDocId];
+        }
+
+        /* ── Core fetch + streaming simulation ───────────────────────── */
+        async function startPrintJob(docId) {
+            const pdfUrl = `/api/admin/documents/${docId}/print-pdf`;
+
+            // [NEW] Create abort controller
+            _printAbortController = new AbortController();
+
+            // We can't truly stream Flask responses without SSE, so we:
+            //  1. Immediately start simulating per-file steps via a preflight call
+            //     that returns the file list, then
+            //  2. Do the real fetch for the PDF blob.
+
+            // ── Step 1: fetch file list (lightweight endpoint) ────────────
+            let fileList = [];
+            try {
+                const infoResp = await fetch(`/api/admin/documents/${docId}/print-preview`);
+                if (infoResp.ok) {
+                    const infoData = await infoResp.json();
+                    if (infoData.success && infoData.documents) {
+                        fileList = infoData.documents.map(d => d.filename);
+                    }
+                }
+            } catch (_) {
+                // Can't get file list — use generic progress
+            }
+
+            // ── Step 2: animate steps while the real PDF generates ────────
+            const pdfPromise = fetchPdfBlob(pdfUrl, _printAbortController.signal);
+
+            if (fileList.length > 0) {
+                await animateFileSteps(fileList);
+            } else {
+                await animateGenericProgress();
+            }
+
+            // [NEW] Check if cancelled during animation
+            if (_printAbortController.signal.aborted) {
+                return; // cancelCurrentPrintJob already handled UI
+            }
+
+            // ── Step 3: wait for PDF ───────────────────────────────────────
+            addStep('info', 'Merging and finalising PDF…');
+            setProgressBar(95);
+
+            let blob;
+            try {
+                blob = await pdfPromise;
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    return; // [NEW] Already handled by cancel
+                }
+                showPrintError(err.message || 'PDF generation failed');
+                return;
+            }
+
+            // [NEW] Check if cancelled while waiting for blob
+            if (_printAbortController.signal.aborted) {
+                return;
+            }
+
+            // ── Step 4: done ───────────────────────────────────────────────
+            setProgressBar(100);
+            addStep('success', 'PDF ready ✓');
+
+            // [NEW] Hide cancel button
+            const cancelBtn = document.getElementById('printCancelHeaderBtn');
+            if (cancelBtn) cancelBtn.classList.add('d-none');
+
+            _currentPdfUrl = URL.createObjectURL(blob);
+
+            document.getElementById('printProgressTitle').textContent = 'PDF Ready';
+            document.getElementById('printProgressSubtitle').textContent = 'Your document has been generated successfully';
+
+            const openBtn = document.getElementById('openPdfBtn');
+            openBtn.onclick = () => window.open(_currentPdfUrl, '_blank');
+
+            document.getElementById('printDoneActions').classList.remove('d-none');
+            document.getElementById('printCancelledActions').classList.add('d-none');
+
+            // Track job_id from response header if available
+            delete activePrintJobs[docId];
+
+            // Auto-open after short delay
+            setTimeout(() => window.open(_currentPdfUrl, '_blank'), 600);
+        }
+
+        /* ── Fetch the actual PDF as a Blob (with abort support) ─────── */
+        async function fetchPdfBlob(url, signal) {
+            const resp = await fetch(url, {
+                signal
+            });
+            if (!resp.ok) {
+                // Try to get job_id from response header even on error
+                const jobId = resp.headers.get('X-Print-Job-Id');
+                if (jobId && _currentPrintDocId) {
+                    activePrintJobs[_currentPrintDocId] = jobId;
+                }
+
+                let msg = `Server error ${resp.status}`;
+                try {
+                    const j = await resp.json();
+                    if (j.cancelled) msg = 'CANCELLED';
+                    else msg = j.message || msg;
+                } catch (_) { }
+                throw new Error(msg);
+            }
+
+            // Track job_id from successful response header
+            const jobId = resp.headers.get('X-Print-Job-Id');
+            if (jobId && _currentPrintDocId) {
+                activePrintJobs[_currentPrintDocId] = jobId;
+            }
+
+            return resp.blob();
+        }
+
+        /* ── Animate per-file steps using the file list ─────────────── */
+        async function animateFileSteps(fileList) {
+            const totalFiles = fileList.length;
+            const pctPerFile = 80 / totalFiles; // reserve last 20% for merge step
+
+            for (let i = 0; i < fileList.length; i++) {
+                // [NEW] Check abort between each file
+                if (_printAbortController && _printAbortController.signal.aborted) return;
+
+                const fname = fileList[i];
+                const basePct = Math.round(pctPerFile * i);
+
+                // Filling
+                addStep('working', `Filling <strong>${escapeHtml(fname)}</strong>…`);
+                setProgressBar(basePct + Math.round(pctPerFile * 0.3));
+                await sleep(180 + Math.random() * 120);
+
+                // [NEW] Check abort
+                if (_printAbortController && _printAbortController.signal.aborted) return;
+
+                // Converting
+                addStep('working', `Converting <strong>${escapeHtml(fname)}</strong> → PDF…`);
+                setProgressBar(basePct + Math.round(pctPerFile * 0.7));
+                await sleep(300 + Math.random() * 200);
+
+                // [NEW] Check abort
+                if (_printAbortController && _printAbortController.signal.aborted) return;
+
+                // Done
+                const isTwice = fname.toUpperCase().includes('WITNESS');
+                const suffix = isTwice ? ' <span style="color:#d97706;">(×2)</span>' : '';
+                addStep('success', `<strong>${escapeHtml(fname)}</strong> → PDF ✓${suffix}`);
+                setProgressBar(basePct + Math.round(pctPerFile));
+                await sleep(80);
+            }
+        }
+
+        /* ── Fallback: generic progress animation (no file list) ─────── */
+        async function animateGenericProgress() {
+            const steps = [{
+                pct: 15,
+                msg: 'Loading template files…'
+            },
+            {
+                pct: 35,
+                msg: 'Filling placeholders…'
+            },
+            {
+                pct: 55,
+                msg: 'Converting documents…'
+            },
+            {
+                pct: 75,
+                msg: 'Generating PDF pages…'
+            },
+            ];
+            for (const s of steps) {
+                // [NEW] Check abort
+                if (_printAbortController && _printAbortController.signal.aborted) return;
+                addStep('working', s.msg);
+                setProgressBar(s.pct);
+                await sleep(400 + Math.random() * 300);
+            }
+        }
+
+        /* ── Show error state ────────────────────────────────────────── */
+        function showPrintError(message) {
+            setProgressBar(100, true);
+            addStep('error', `Error: ${message}`);
+
+            document.getElementById('printProgressTitle').textContent = 'Generation Failed';
+            document.getElementById('printProgressSubtitle').textContent = 'Something went wrong. Please try again.';
+
+            // [NEW] Hide cancel button
+            const cancelBtn = document.getElementById('printCancelHeaderBtn');
+            if (cancelBtn) cancelBtn.classList.add('d-none');
+
+            document.getElementById('printDoneActions').classList.add('d-none');
+            document.getElementById('printCancelledActions').classList.add('d-none'); // [NEW]
+            document.getElementById('printErrorActions').classList.remove('d-none');
+
+            const retryBtn = document.getElementById('retryPrintBtn');
+            retryBtn.onclick = () => {
+                resetPrintModal();
+                startPrintJob(_currentPrintDocId);
+            };
+
+            if (_currentPrintDocId) delete activePrintJobs[_currentPrintDocId];
+        }
+
+        /* ── UI helpers ──────────────────────────────────────────────── */
+        function setProgressBar(pct, isError = false, customColor = null) {
+            const bar = document.getElementById('printProgressBar');
+            const pctEl = document.getElementById('printProgressPct');
+            if (!bar) return;
+            const clamped = Math.min(100, Math.max(0, pct));
+            bar.style.width = clamped + '%';
+            bar.style.background = customColor || (isError ? '#dc2626' : 'var(--ink)');
+            if (pctEl) pctEl.textContent = clamped + '%';
+        }
+
+        function addStep(type, html) {
+            const log = document.getElementById('printStepLog');
+            if (!log) return;
+
+            const icons = {
+                working: `<span style="display:inline-block; width:14px; height:14px; border:2px solid var(--ink-muted); border-top-color:transparent; border-radius:50%; animation:spin 0.8s linear infinite; vertical-align:middle; margin-right:.4rem;"></span>`,
+                success: `<i class="bi bi-check-circle-fill" style="color:#16a34a; margin-right:.4rem; font-size:.85rem;"></i>`,
+                info: `<i class="bi bi-arrow-right-circle" style="color:var(--ink-muted); margin-right:.4rem; font-size:.85rem;"></i>`,
+                error: `<i class="bi bi-x-circle-fill" style="color:#dc2626; margin-right:.4rem; font-size:.85rem;"></i>`,
+                cancel: `<i class="bi bi-stop-circle-fill" style="color:#f59e0b; margin-right:.4rem; font-size:.85rem;"></i>`,
+            };
+
+            const colors = {
+                working: 'var(--ink-soft)',
+                success: '#15803d',
+                info: 'var(--ink-muted)',
+                error: '#dc2626',
+                cancel: '#d97706',
+            };
+
+            const now = new Date();
+            const ts = now.toLocaleTimeString('en-GB', {
+                hour12: false
+            });
+
+            const line = document.createElement('div');
+            line.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: .25rem;
+        padding: .2rem 0;
+        color: ${colors[type] || 'var(--ink-soft)'};
+        border-bottom: 1px solid var(--rule-soft);
+        animation: fadeIn .2s ease;
+    `;
+            line.innerHTML = `
+        <span style="color:var(--ink-faint); font-size:.7rem; white-space:nowrap; flex-shrink:0;">${ts}</span>
+        ${icons[type] || ''}
+        <span style="font-size:.8125rem; line-height:1.4;">${html}</span>
+    `;
+
+            log.appendChild(line);
+
+            // Remove spinner from previous "working" steps
+            log.querySelectorAll('span[style*="border-top-color:transparent"]').forEach((el, idx, arr) => {
+                if (idx < arr.length - 1) {
+                    el.style.animation = 'none';
+                    el.style.borderColor = 'var(--rule)';
+                }
+            });
+
+            // Auto-scroll to bottom
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function sleep(ms) {
+            return new Promise(r => setTimeout(r, ms));
+        }
+
+        /* ── Spin keyframe (needed for the inline spinner in addStep) ─── */
+        const _spinStyle = document.createElement('style');
+        _spinStyle.textContent = `
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to   { transform: rotate(360deg); }
+    }
+    @keyframes fadeIn {
+        from { opacity:0; transform:translateY(4px); }
+        to   { opacity:1; transform:translateY(0); }
+    }
+`;
+        document.head.appendChild(_spinStyle);
+    </script>
+
+</body>
+
+</html>

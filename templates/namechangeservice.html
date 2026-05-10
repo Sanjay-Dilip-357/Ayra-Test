@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Name Change Service - AYRA Services</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        /* ==================== NAME CHANGE SERVICE SPECIFIC STYLES ==================== */
+
+        /* Template Selector Card */
+        .template-selector-card {
+            background: var(--pure-white);
+            border-radius: 16px;
+            padding: 1.75rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-light);
+        }
+
+        .template-dropdown {
+            border: 2px solid var(--border-light);
+            border-radius: 10px;
+            padding: 0.875rem 1rem;
+            font-weight: 500;
+            min-height: 48px;
+            background: var(--off-white);
+            transition: var(--transition-normal);
+        }
+
+        .template-dropdown:focus {
+            border-color: var(--primary-dark);
+            box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.1);
+            background: var(--pure-white);
+        }
+
+        /* Template Files Section */
+        .template-files-header {
+            cursor: pointer;
+            padding: 0.75rem 1rem;
+            background: var(--lightest-gray);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: var(--transition-fast);
+            border: 1px solid var(--border-light);
+        }
+
+        .template-files-header:hover {
+            background: var(--lighter-gray);
+        }
+
+        .template-files-list {
+            margin-top: 0.75rem;
+            padding: 1rem;
+            background: var(--off-white);
+            border-radius: 8px;
+            border: 1px solid var(--border-light);
+        }
+
+        .template-file-item {
+            padding: 0.5rem 0.75rem;
+            background: var(--pure-white);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            border: 1px solid var(--border-light);
+            transition: var(--transition-fast);
+        }
+
+        .template-file-item:hover {
+            background: var(--lightest-gray);
+            transform: translateX(4px);
+        }
+
+        .folder-type-badge {
+            padding: 0.25rem 0.65rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .folder-type-badge.main {
+            background: var(--primary-dark);
+            color: var(--pure-white);
+        }
+
+        .folder-type-badge.married {
+            background: var(--primary-gray);
+            color: var(--pure-white);
+        }
+
+        .folder-type-badge.unmarried {
+            background: var(--primary-gray-medium);
+            color: var(--pure-white);
+        }
+
+        /* Form Sections */
+        .template-form-section {
+            display: none;
+        }
+
+        .template-form-section.active {
+            display: block;
+        }
+
+        .form-section {
+            background: var(--pure-white);
+            border-radius: 14px;
+            padding: 1.75rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-light);
+        }
+
+        .section-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: var(--gradient-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--pure-white);
+            font-size: 1.25rem;
+            margin-right: 1rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .section-title {
+            font-weight: 700;
+            margin: 0;
+            font-size: 1.15rem;
+            color: var(--primary-dark);
+        }
+
+        /* Alias Fields */
+        .add-alias-btn {
+            background: var(--gradient-dark);
+            border: none;
+            color: var(--pure-white);
+            padding: 0.5rem;
+            border-radius: 8px;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition-normal);
+            flex-shrink: 0;
+        }
+
+        .add-alias-btn:hover {
+            background: var(--gradient-medium);
+            transform: scale(1.05);
+        }
+
+        .alias-container {
+            margin-top: 0.5rem;
+        }
+
+        .alias-field-wrapper {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            animation: slideDown 0.3s ease;
+        }
+
+        .alias-field-wrapper input {
+            flex: 1;
+        }
+
+        .remove-alias-btn {
+            background: var(--primary-dark);
+            border: none;
+            color: var(--pure-white);
+            padding: 0.5rem;
+            border-radius: 8px;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .remove-alias-btn:hover {
+            background: var(--primary-black);
+            transform: scale(1.05);
+        }
+
+        .alias-counter {
+            margin-top: 0.5rem;
+            padding: 0.35rem 0.65rem;
+            background: var(--lightest-gray);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--primary-gray-medium);
+            display: inline-block;
+        }
+
+        .alias-preview {
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            background: var(--off-white);
+            border-radius: 8px;
+            border: 1px solid var(--border-light);
+        }
+
+        .alias-preview .preview-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--primary-gray-medium);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .alias-preview .preview-text {
+            color: var(--primary-dark);
+            font-weight: 500;
+        }
+
+        /* Phone Auto Container */
+        .phone-auto-container {
+            position: relative;
+        }
+
+        .btn-get-phone {
+            background: var(--gradient-dark);
+            border: none;
+            color: var(--pure-white);
+            padding: 0.5rem 0.75rem;
+            border-radius: 0 8px 8px 0;
+            transition: var(--transition-normal);
+        }
+
+        .btn-get-phone:hover {
+            background: var(--gradient-medium);
+            color: var(--pure-white);
+        }
+
+        .phone-auto-indicator,
+        .auto-email-indicator,
+        .auto-age-indicator {
+            margin-top: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            background: var(--lightest-gray);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: var(--primary-gray-medium);
+            display: inline-block;
+        }
+
+        .digit-counter {
+            font-size: 0.7rem;
+            color: var(--primary-gray-medium);
+            margin-top: 0.25rem;
+            text-align: right;
+        }
+
+        /* Age Error Message */
+        .age-error-message {
+            margin-top: 0.25rem;
+            padding: 0.35rem 0.65rem;
+            background: var(--lighter-gray);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--primary-dark);
+            border-left: 3px solid var(--primary-dark);
+        }
+
+        /* Input Group Customization */
+        .input-group-text {
+            background: var(--lightest-gray);
+            border: 2px solid var(--border-light);
+            color: var(--primary-gray-medium);
+            font-weight: 500;
+        }
+
+        /* Preview Section */
+        .preview-section {
+            background: var(--pure-white);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-lg);
+            margin-top: 2rem;
+            border: 1px solid var(--border-light);
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-light);
+        }
+
+        .preview-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .preview-badge {
+            padding: 0.375rem 0.85rem;
+            background: var(--gradient-dark);
+            color: var(--pure-white);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .preview-table {
+            width: 100%;
+            margin-bottom: 1.5rem;
+            border-collapse: separate;
+            border-spacing: 0;
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .preview-table th {
+            background: var(--off-white);
+            padding: 0.875rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--primary-gray);
+            border-bottom: 2px solid var(--border-light);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .preview-table td {
+            padding: 0.75rem 0.875rem;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--primary-gray);
+        }
+
+        .preview-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .preview-table tbody tr:hover {
+            background: var(--lightest-gray);
+        }
+
+        /* Preview Actions */
+        .preview-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .btn-cancel-preview {
+            background: var(--lighter-gray);
+            border: 2px solid var(--border-medium);
+            color: var(--primary-gray);
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: var(--transition-normal);
+        }
+
+        .btn-cancel-preview:hover {
+            background: var(--light-gray);
+            color: var(--primary-dark);
+        }
+
+        .btn-edit-all,
+        .btn-save-preview {
+            background: var(--primary-gray);
+            border: none;
+            color: var(--pure-white);
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: var(--transition-normal);
+        }
+
+        .btn-edit-all:hover,
+        .btn-save-preview:hover {
+            background: var(--primary-gray-dark);
+            color: var(--pure-white);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-draft {
+            background: var(--primary-gray-medium);
+            border: none;
+            color: var(--pure-white);
+            padding: 0.75rem 1.75rem;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: var(--transition-normal);
+        }
+
+        .btn-draft:hover {
+            background: var(--primary-gray);
+            color: var(--pure-white);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-submit-approval {
+            background: var(--gradient-dark);
+            border: none;
+            color: var(--pure-white);
+            padding: 0.75rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: var(--transition-normal);
+        }
+
+        .btn-submit-approval:hover {
+            background: var(--gradient-medium);
+            color: var(--pure-white);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-submit-approval:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Info Alert for Users */
+        .user-info-alert {
+            background: var(--lightest-gray);
+            border: none;
+            border-left: 4px solid var(--primary-dark);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .user-info-alert strong {
+            color: var(--primary-dark);
+        }
+
+        .user-info-alert ol {
+            color: var(--primary-gray);
+        }
+
+        /* Success/Submitted Sections */
+        #draftSavedSection .form-section,
+        #submittedSection .form-section {
+            padding: 3rem 2rem;
+        }
+
+        #draftSavedSection i {
+            color: var(--primary-gray) !important;
+        }
+
+        #draftSavedSection h4 {
+            color: var(--primary-gray) !important;
+        }
+
+        #submittedSection i {
+            color: var(--primary-dark) !important;
+        }
+
+        #submittedSection h4 {
+            color: var(--primary-dark) !important;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .preview-actions {
+                flex-direction: column;
+            }
+
+            .preview-actions .btn {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+
+            .form-section {
+                padding: 1.25rem;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .section-icon {
+                width: 38px;
+                height: 38px;
+                font-size: 1.1rem;
+            }
+
+            .template-selector-card {
+                padding: 1.25rem;
+            }
+
+            .preview-section {
+                padding: 1.5rem;
+            }
+
+            .preview-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .template-file-item {
+                font-size: 0.875rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .add-alias-btn {
+                width: 38px;
+                height: 38px;
+            }
+
+            .btn-get-phone {
+                padding: 0.5rem 0.6rem;
+            }
+
+            .user-info-alert {
+                padding: 1rem;
+            }
+
+            .user-info-alert ol {
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+
+            .template-selector-card,
+            .preview-actions,
+            .user-info-alert,
+            .add-alias-btn,
+            .btn-get-phone,
+            .navbar,
+            .footer {
+                display: none !important;
+            }
+
+            .preview-section {
+                box-shadow: none;
+                border: 1px solid var(--border-dark);
+            }
+
+            .form-section {
+                break-inside: avoid;
+            }
+        }
+
+        /* Loading State */
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+            border-width: 0.15em;
+        }
+
+        /* Custom Scrollbar for Preview */
+        .preview-table::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .preview-table::-webkit-scrollbar-track {
+            background: var(--lightest-gray);
+        }
+
+        .preview-table::-webkit-scrollbar-thumb {
+            background: var(--primary-gray-light);
+            border-radius: 3px;
+        }
+
+        /* Editable Preview Cells */
+        .preview-table td.editable {
+            cursor: text;
+            transition: var(--transition-fast);
+        }
+
+        .preview-table td.editable:hover {
+            background: var(--lighter-gray);
+        }
+
+        .preview-table td.editable:focus {
+            outline: 2px solid var(--primary-dark);
+            outline-offset: -2px;
+            background: var(--pure-white);
+        }
+
+        /* Phone Input Editing Styles */
+        .phone-input {
+            cursor: text !important;
+        }
+
+        .phone-input:focus {
+            background-color: #fff !important;
+            border-color: var(--primary-dark) !important;
+            box-shadow: 0 0 0 0.2rem rgba(26, 26, 26, 0.15) !important;
+        }
+
+        .phone-input.editing {
+            background-color: #fffef0;
+        }
+
+        .phone-input.auto-filled {
+            background-color: #e8f5e9;
+            transition: background-color 0.3s ease;
+        }
+
+        .phone-auto-indicator.modified {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 3px solid #ffc107;
+        }
+
+        /* Ensure phone inputs are always editable */
+        .phone-input[readonly] {
+            background-color: #fff !important;
+            cursor: text !important;
+        }
+
+        /* ==================== ALIAS FIELDS - IMPROVED ALIGNMENT ==================== */
+        .alias-container {
+            margin-top: 0.75rem;
+        }
+
+        .alias-field-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alias-field-wrapper input.alias-input {
+            flex: 1;
+            min-width: 0;
+            /* Prevents flex overflow */
+        }
+
+        .remove-alias-btn {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            border: none;
+            color: var(--pure-white);
+            padding: 0;
+            border-radius: 8px;
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            /* Prevents shrinking */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            flex-shrink: 0;
+            /* Prevents button from shrinking */
+        }
+
+        .remove-alias-btn:hover {
+            background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+            transform: scale(1.08);
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+        }
+
+        .remove-alias-btn:active {
+            transform: scale(0.95);
+        }
+
+        .remove-alias-btn i {
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        .alias-counter {
+            margin-top: 0.5rem;
+            padding: 0.35rem 0.65rem;
+            background: var(--lightest-gray);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--primary-gray-medium);
+            display: inline-block;
+        }
+
+        .alias-preview {
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            background: var(--off-white);
+            border-radius: 8px;
+            border: 1px solid var(--border-light);
+        }
+
+        .alias-preview .preview-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--primary-gray-medium);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .alias-preview .preview-text {
+            color: var(--primary-dark);
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        .alias-preview .name-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            display: inline-block;
+            margin: 0.25rem;
+            font-weight: 600;
+        }
+
+        .alias-preview .alias-keyword {
+            color: var(--primary-gray);
+            font-style: italic;
+            font-weight: 500;
+            margin: 0 0.25rem;
+        }
+
+        /* Responsive adjustments for alias fields */
+        @media (max-width: 576px) {
+            .alias-field-wrapper {
+                gap: 0.375rem;
+            }
+
+            .remove-alias-btn {
+                width: 36px;
+                height: 36px;
+                min-width: 36px;
+            }
+
+            .remove-alias-btn i {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <div class="brand-logo me-2"><i class="bi bi-file-earmark-text-fill"></i></div>
+                <div class="brand-text">
+                    <span class="brand-name">AYRA</span>
+                    <span class="text-light ms-2" style="opacity: 0.8;">Services</span>
+                </div>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto">
+                    <a href="/dashboard" class="nav-link text-light">
+                        <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+                    </a>
+                    <span class="nav-item nav-link text-light">
+                        <i class="bi bi-clock me-1"></i><span id="current-time"></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container py-4">
+
+            <!-- User Info Alert -->
+            <div class="alert user-info-alert mb-4">
+                <div class="d-flex align-items-start">
+                    <i class="bi bi-info-circle-fill me-3 mt-1"
+                        style="font-size: 1.5rem; color: var(--primary-dark);"></i>
+                    <div>
+                        <strong>How it works:</strong>
+                        <ol class="mb-0 mt-2 ps-3">
+                            <li>Fill in the document details below</li>
+                            <li>Preview your document</li>
+                            <li>Save as draft or submit for admin approval</li>
+                            <li>Admin will review and generate your documents</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mb-4">
+                <h1 class="display-5 fw-bold" style="color: var(--primary-dark);">Document Processing System</h1>
+                <p class="text-muted">Select a template type and create personalized documents</p>
+            </div>
+
+            <div class="template-selector-card">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <label for="templateSelector" class="form-label fw-semibold mb-2">
+                            <i class="bi bi-folder2-open me-2" style="color: var(--primary-dark);"></i>Select Template Type
+                            <span class="required-asterisk">*</span>
+                        </label>
+                        <select class="form-select template-dropdown" id="templateSelector"
+                            onchange="selectTemplate(this.value)">
+                            <option value="" disabled selected>-- Choose a template --</option>
+                            {% for key, info in template_info.items() %}
+                            <option value="{{ key }}" data-icon="{{ info.icon }}" data-color="{{ info.color }}"
+                                data-count="{{ info.count }}">{{ info.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mt-3 mt-md-0">
+                        <div id="templateFilesInfo" class="d-none">
+                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                <span class="small fw-semibold text-muted"><i class="bi bi-files me-1"></i>Template
+                                    Files:</span>
+                                <span id="templateFileCount" class="badge bg-dark rounded-pill">0</span>
+                                <span id="folderTypeBadge" class="folder-type-badge main d-none">Main Folder</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="templateFilesSection" class="d-none mt-3">
+                    <div class="template-files-header" data-bs-toggle="collapse" data-bs-target="#templateFilesList">
+                        <span class="small fw-semibold text-muted"><i class="bi bi-files me-1"></i>View Template
+                            Files</span>
+                        <i class="bi bi-chevron-down small"></i>
+                    </div>
+                    <div class="collapse" id="templateFilesList">
+                        <div class="template-files-list" id="templateFilesContainer"></div>
+                    </div>
+                </div>
+            </div>
+
+            <form id="processForm" class="d-none" novalidate>
+                <input type="hidden" id="template_type" name="template_type" value="">
+                <input type="hidden" id="current_folder_type" value="main">
+
+                <!-- MAJOR TEMPLATE -->
+                <div class="template-form-section" data-template="major_template">
+                    <div class="form-section">
+                        <div class="section-header">
+                            <div class="section-icon"><i class="bi bi-person-fill"></i></div>
+                            <h5 class="section-title">Personal Details</h5>
+                        </div>
+                        <div class="row g-2">
+                            <!-- Row 1: Old Name, New Name, Gender -->
+                            <div class="col-md-4">
+                                <label class="form-label">Old Name <span class="required-asterisk">*</span> <small
+                                        class="text-muted">(+alias)</small></label>
+                                <div class="d-flex gap-1">
+                                    <div class="input-group flex-grow-1">
+                                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                        <input type="text" class="form-control uppercase-input" name="old_name"
+                                            id="major_old_name" placeholder="Current name" data-required="true"
+                                            oninput="updateAliasPreview('major'); generateEmailFromName('major');">
+                                    </div>
+                                    <button type="button" class="add-alias-btn" onclick="addAliasField('major')"
+                                        title="Add Alias"><i class="bi bi-plus-lg"></i></button>
+                                </div>
+                                <div class="alias-container" id="major_alias_container"></div>
+                                <div class="alias-counter" id="major_alias_counter" style="display:none;"><i
+                                        class="bi bi-tags me-1"></i>Aliases: <span class="count">0</span></div>
+                                <div class="alias-preview" id="major_alias_preview" style="display:none;">
+                                    <div class="preview-label"><i class="bi bi-eye me-1"></i>Preview:</div>
+                                    <div class="preview-text" id="major_alias_preview_text"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">New Name <span class="required-asterisk">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-person-check"></i></span>
+                                    <input type="text" class="form-control uppercase-input" name="new_name"
+                                        placeholder="New name" data-required="true">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Gender <span class="required-asterisk">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-gender-ambiguous"></i></span>
+                                    <select class="form-select" name="gender_update" id="majorGenderSelect"
+                                        data-required="true">
+                                        <option value="" disabled selected>Select...</option>
+                                        <option value="MALE">Male</option>
+                                        <option value="FEMALE">Female</option>
+                                        <option value="OTHER">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Row 2: Relationship, Father/Spouse, Religion/Cast -->
+                            <div class="col-md-4">
+                                <label class="form-label">Relationship <span class="required-asterisk">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-people"></i></span>
+                                    <select class="form-select" id="majorRelationSelect" name="relation"
+                                        data-required="true">
+                                        <option value="" disabled selected>Select...</option>
+                                        <option value="s">S/o</option>
+                                        <option value="d">D/o</option>
+                                        <option value="w">W/o</option>
+                                        <option value="d/w">D/o & W/o</option>
+                                    </select>
+                                </div>
+                                <small id="majorRelationHint" class="text-muted d-none" style="font-size:0.7rem;"><i
+                                        class="bi bi-info-circle me-1"></i>D/o uses unmarried templates</small>
+                            </div>
+                            <div class="col-md-4" id="majorNormalFatherSpouseField">
+                                <label class="form-label">Father/Spouse <span class="required-asterisk">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-person-heart"></i></span>
+                                    <input type="text" class="form-control uppercase-input" name="fatherspouse_name"
+                                        id="major_fatherspouse_name" placeholder="Name" data-required="true">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Email <span class="required-asterisk">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                    <input type="text" class="form-control" name="email_update" id="major_email_update"
+                                        placeholder="Email" data-required="true">
+                                </div>
+                                <div class="auto-email-indicator d-none" id="major_email_indicator"><i
+                                        class="bi bi-magic"></i>Auto-generated</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Religion/Cast <span class="required-asterisk">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-building"></i></span>
+                                    <select class="form-select" name="cast_update" data-required="true">
+                                        <option value="" disabled selected>Select...</option>
+                                        {% for cast in cast_options %}
+                                        <option value="{{ cast }}">{{ cast }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Dual Relation Fields (Hidden by default) -->
+                            <div class="col-12 d-none" id="majorDualRelationFields">
+                                <div class="card dual-relation-card">
+                                    <div class="card-header"><i class="bi bi-people-fill me-2"></i>D/o & W/o - Enter
+                                        Both Names</div>
+                                    <div class="card-body">
+                                        <div class="row g-2">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Father Name <span
+                                                        class="required-asterisk">*</span></label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"
+                                                        style="background: var(--primary-dark); color: white; border-color: var(--primary-dark);">D/o</span>
+                                                    <input type="text" class="form-control uppercase-input"
+                                                        name="father_name" id="major_father_name"
+                                                        placeholder="Father's name">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Husband Name <span
+                                                        class="required-asterisk">*</span></label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"
+                                                        style="background: var(--primary-gray); color: white; border-color: var(--primary-gray);">W/o</span>
+                                                    <input type="text" class="form-control uppercase-input"
+                                                        name="spouse_name" id="major_spouse_name"
+                                                        placeholder="Husband's name">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Row 3: Phone, Address -->
+                            <div class="col-md-4">
+                                <label class="form-label">Address <span class="required-asterisk">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-house"></i></span>
+                                    <input type="text" class="form-control uppercase-input" name="update_address"
+                                        id="major_update_address" placeholder="Current address" data-required="true"
+                                        oninput="copyAddressToWitnesses('major');">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Phone <span class="required-asterisk">*</span></label>
+                                <div class="phone-auto-container">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-phone"></i></span>
+                                        <input type="tel" class="form-control phone-input" name="phone_update"
+                                            id="major_phone_update" placeholder="10-digit" maxlength="10"
+                                            inputmode="numeric" data-required="true">
+                                        <button type="button" class="btn btn-get-phone"
+                                            onclick="getNextPhone('major_phone_update')"
+                                            title="Get next available phone">
+                                            <i class="bi bi-arrow-repeat"></i>
+                                        </button>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="phone-auto-indicator d-none" id="major_phone_update_indicator">
+                                            <i class="bi bi-magic"></i>Auto-filled
+                                        </div>
+                                        <div class="digit-counter">0/10 digits</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MINOR TEMPLATE -->
+                <div class="template-form-section" data-template="minor_template">
+                    <div class="form-section">
+                        <div class="section-header">
+                            <div class="section-icon" style="background: var(--primary-gray);"><i
+                                    class="bi bi-people-fill"></i></div>
+                            <h5 class="section-title">Parent/Guardian Details</h5>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label">Father/Mother Name <span
+                                        class="required-asterisk">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-person-heart"></i></span>
+                                    <input type="text" class="form-control uppercase-input" name="fathermother_name"
+                                        id="minor_fathermother_name" placeholder="Name" data-required="true"
+                                        oninput="generateEmailFromName('minor');">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Relationship <span class="required-asterisk">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-people"></i></span>
+                                    <select class="form-select" id="minorRelationSelect" name="relation"
+                                        data-required="true">
+                                        <option value="" disabled selected>Select...</option>
+                                        <option value="s">S/o</option>
+                                        <option value="d">D/o</option>
+                                        <option value="w">W/o</option>
+                                        <option value="d/w">D/o & W/o</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4" id="minorNormalGuardianSpouseField">
+                                <label class="form-label">Guardian Spouse <span
+                                        class="required-asterisk">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                    <input type="text" class="form-control uppercase-input" name="fatherspouse_name"
+                                        id="minor_fatherspouse_name" placeholder="Name" data-required="true">
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Address <span class="required-asterisk">*</span></label>
+                                <input type="text" class="form-control uppercase-input" name="update_address"
+                                    id="minor_update_address" placeholder="Address" data-required="true"
+                                    oninput="copyAddressToWitnesses('minor');">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Phone <span class="required-asterisk">*</span></label>
+                                <div class="phone-auto-container">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-phone"></i></span>
+                                        <input type="tel" class="form-control phone-input" name="phone_update"
+                                            id="minor_phone_update" placeholder="10-digit" maxlength="10"
+                                            inputmode="numeric" data-required="true">
+                                        <button type="button" class="btn btn-get-phone"
+                                            onclick="getNextPhone('minor_phone_update')"
+                                            title="Get next available phone">
+                                            <i class="bi bi-arrow-repeat"></i>
+                                        </button>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="phone-auto-indicator d-none" id="minor_phone_update_indicator">
+                                            <i class="bi bi-magic"></i>Auto-filled
+                                        </div>
+                                        <div class="digit-counter">0/10 digits</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Email <span class="required-asterisk">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                    <input type="text" class="form-control" name="email_update" id="minor_email_update"
+                                        placeholder="Email" data-required="true">
+                                </div>
+                                <div class="auto-email-indicator d-none" id="minor_email_indicator"><i
+                                        class="bi bi-magic"></i>Auto-generated</div>
+                            </div>
+
+                            <!-- Dual Relation Fields (Hidden by default) -->
+                            <div class="col-12 d-none" id="minorDualRelationFields">
+                                <div class="card dual-relation-card">
+                                    <div class="card-header"><i class="bi bi-people-fill me-2"></i>D/o & W/o - Guardian
+                                        Names</div>
+                                    <div class="card-body">
+                                        <div class="row g-2">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Guardian's Father <span
+                                                        class="required-asterisk">*</span></label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"
+                                                        style="background: var(--primary-dark); color: white; border-color: var(--primary-dark);">D/o</span>
+                                                    <input type="text" class="form-control uppercase-input"
+                                                        name="guardian_father_name" id="minor_guardian_father_name"
+                                                        placeholder="Father's name">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Guardian's Husband <span
+                                                        class="required-asterisk">*</span></label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"
+                                                        style="background: var(--primary-gray); color: white; border-color: var(--primary-gray);">W/o</span>
+                                                    <input type="text" class="form-control uppercase-input"
+                                                        name="guardian_spouse_name" id="minor_guardian_spouse_name"
+                                                        placeholder="Husband's name">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-header">
+                            <div class="section-icon" style="background: var(--primary-gray);"><i
+                                    class="bi bi-emoji-smile"></i></div>
+                            <h5 class="section-title">Child Details</h5>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label">Child Old Name <span class="required-asterisk">*</span> <small
+                                        class="text-muted">(+alias)</small></label>
+                                <div class="d-flex gap-1">
+                                    <div class="input-group flex-grow-1">
+                                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                        <input type="text" class="form-control uppercase-input" name="old_name"
+                                            id="minor_old_name" placeholder="Current name" data-required="true"
+                                            oninput="updateAliasPreview('minor');">
+                                    </div>
+                                    <button type="button" class="add-alias-btn" onclick="addAliasField('minor')"><i
+                                            class="bi bi-plus-lg"></i></button>
+                                </div>
+                                <div class="alias-container" id="minor_alias_container"></div>
+                                <div class="alias-counter" id="minor_alias_counter" style="display:none;"><i
+                                        class="bi bi-tags me-1"></i>Aliases: <span class="count">0</span></div>
+                                <div class="alias-preview" id="minor_alias_preview" style="display:none;">
+                                    <div class="preview-label"><i class="bi bi-eye me-1"></i>Preview:</div>
+                                    <div class="preview-text" id="minor_alias_preview_text"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Child New Name <span
+                                        class="required-asterisk">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-person-check"></i></span>
+                                    <input type="text" class="form-control uppercase-input" name="new_name"
+                                        placeholder="New name" data-required="true">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Gender <span class="required-asterisk">*</span></label>
+                                <select class="form-select" name="gender_update" id="minorGenderSelect"
+                                    data-required="true">
+                                    <option value="" disabled selected>Select...</option>
+                                    <option value="MALE">Male</option>
+                                    <option value="FEMALE">Female</option>
+                                    <option value="OTHER">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Son/Daughter <span class="required-asterisk">*</span></label>
+                                <select class="form-select" name="son_daughter" id="sonDaughterSelect"
+                                    data-required="true">
+                                    <option value="" disabled selected>Select...</option>
+                                    <option value="son">Son</option>
+                                    <option value="daughter">Daughter</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">DOB <span class="required-asterisk">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-calendar"></i></span>
+                                    <input type="date" class="form-control" name="child_dob" id="minor_child_dob"
+                                        data-required="true">
+                                </div>
+                                <div class="age-error-message d-none" id="dob_error_message">
+                                    <i class="bi bi-exclamation-circle me-1"></i>Person is 18+ years old
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Age <span class="required-asterisk">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-hash"></i></span>
+                                    <input type="number" class="form-control" name="update_age" id="minor_update_age"
+                                        placeholder="Auto-calculated" min="0" max="17" data-required="true" readonly>
+                                    <span class="input-group-text">years</span>
+                                </div>
+                                <div class="auto-age-indicator d-none" id="minor_age_indicator">
+                                    <i class="bi bi-magic"></i>Auto-calculated from DOB
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Birth Place <span class="required-asterisk">*</span></label>
+                                <input type="text" class="form-control uppercase-input" name="birth_place"
+                                    placeholder="Place" data-required="true">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Religion/Cast <span class="required-asterisk">*</span></label>
+                                <select class="form-select" name="cast_update" data-required="true">
+                                    <option value="" disabled selected>Select...</option>
+                                    {% for cast in cast_options %}
+                                    <option value="{{ cast }}">{{ cast }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RELIGION TEMPLATE -->
+                <div class="template-form-section" data-template="religion_template">
+                    <div class="form-section">
+                        <div class="section-header">
+                            <div class="section-icon" style="background: var(--primary-gray-medium);"><i
+                                    class="bi bi-building"></i></div>
+                            <h5 class="section-title">Personal Details</h5>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label">Old Name <span class="required-asterisk">*</span> <small
+                                        class="text-muted">(+alias)</small></label>
+                                <div class="d-flex gap-1">
+                                    <div class="input-group flex-grow-1">
+                                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                        <input type="text" class="form-control uppercase-input" name="old_name"
+                                            id="religion_old_name" placeholder="Name" data-required="true"
+                                            oninput="updateAliasPreview('religion'); generateEmailFromName('religion');">
+                                    </div>
+                                    <button type="button" class="add-alias-btn" onclick="addAliasField('religion')"><i
+                                            class="bi bi-plus-lg"></i></button>
+                                </div>
+                                <div class="alias-container" id="religion_alias_container"></div>
+                                <div class="alias-counter" id="religion_alias_counter" style="display:none;"><i
+                                        class="bi bi-tags me-1"></i>Aliases: <span class="count">0</span></div>
+                                <div class="alias-preview" id="religion_alias_preview" style="display:none;">
+                                    <div class="preview-label"><i class="bi bi-eye me-1"></i>Preview:</div>
+                                    <div class="preview-text" id="religion_alias_preview_text"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">New Name <span class="required-asterisk">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-person-check"></i></span>
+                                    <input type="text" class="form-control uppercase-input" name="new_name"
+                                        placeholder="New name" data-required="true">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Gender <span class="required-asterisk">*</span></label>
+                                <select class="form-select" name="gender_update" id="religionGenderSelect"
+                                    data-required="true">
+                                    <option value="" disabled selected>Select...</option>
+                                    <option value="MALE">Male</option>
+                                    <option value="FEMALE">Female</option>
+                                    <option value="OTHER">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Relationship <span class="required-asterisk">*</span></label>
+                                <select class="form-select" id="religionRelationSelect" name="relation"
+                                    data-required="true">
+                                    <option value="" disabled selected>Select...</option>
+                                    <option value="s">S/o</option>
+                                    <option value="d">D/o</option>
+                                    <option value="w">W/o</option>
+                                    <option value="d/w">D/o & W/o</option>
+                                </select>
+                                <small id="religionRelationHint" class="text-muted d-none" style="font-size:0.7rem;"><i
+                                        class="bi bi-info-circle me-1"></i>D/o uses unmarried templates</small>
+                            </div>
+                            <div class="col-md-4" id="religionNormalFatherSpouseField">
+                                <label class="form-label">Father/Spouse <span class="required-asterisk">*</span></label>
+                                <input type="text" class="form-control uppercase-input" name="fatherspouse_name"
+                                    id="religion_fatherspouse_name" placeholder="Name" data-required="true">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Email <span class="required-asterisk">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                    <input type="text" class="form-control" name="email_update"
+                                        id="religion_email_update" placeholder="Email" data-required="true">
+                                </div>
+                                <div class="auto-email-indicator d-none" id="religion_email_indicator"><i
+                                        class="bi bi-magic"></i>Auto-generated</div>
+                            </div>
+
+                            <!-- Dual Relation Fields (Hidden by default) -->
+                            <div class="col-12 d-none" id="religionDualRelationFields">
+                                <div class="card dual-relation-card">
+                                    <div class="card-header"><i class="bi bi-people-fill me-2"></i>D/o & W/o - Both
+                                        Names</div>
+                                    <div class="card-body">
+                                        <div class="row g-2">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Father <span
+                                                        class="required-asterisk">*</span></label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"
+                                                        style="background: var(--primary-dark); color: white; border-color: var(--primary-dark);">D/o</span>
+                                                    <input type="text" class="form-control uppercase-input"
+                                                        name="father_name" id="religion_father_name"
+                                                        placeholder="Father">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Husband <span
+                                                        class="required-asterisk">*</span></label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"
+                                                        style="background: var(--primary-gray); color: white; border-color: var(--primary-gray);">W/o</span>
+                                                    <input type="text" class="form-control uppercase-input"
+                                                        name="spouse_name" id="religion_spouse_name"
+                                                        placeholder="Husband">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Address <span class="required-asterisk">*</span></label>
+                                <input type="text" class="form-control uppercase-input" name="update_address"
+                                    id="religion_update_address" placeholder="Address" data-required="true"
+                                    oninput="copyAddressToWitnesses('religion');">
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Religion/Cast <span class="required-asterisk">*</span></label>
+                                <select class="form-select" name="cast_update" data-required="true">
+                                    <option value="" disabled selected>Select...</option>
+                                    {% for cast in cast_options %}
+                                    <option value="{{ cast }}">{{ cast }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Phone <span class="required-asterisk">*</span></label>
+                                <div class="phone-auto-container">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-phone"></i></span>
+                                        <input type="tel" class="form-control phone-input" name="phone_update"
+                                            id="religion_phone_update" placeholder="10-digit" maxlength="10"
+                                            inputmode="numeric" data-required="true">
+                                        <button type="button" class="btn btn-get-phone"
+                                            onclick="getNextPhone('religion_phone_update')"
+                                            title="Get next available phone">
+                                            <i class="bi bi-arrow-repeat"></i>
+                                        </button>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="phone-auto-indicator d-none" id="religion_phone_update_indicator">
+                                            <i class="bi bi-magic"></i>Auto-filled
+                                        </div>
+                                        <div class="digit-counter">0/10 digits</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COMMON SECTIONS -->
+                <div id="commonSections" class="d-none">
+                    <div class="form-section">
+                        <div class="section-header">
+                            <div class="section-icon"><i class="bi bi-person-badge"></i></div>
+                            <h5 class="section-title">Witnesses</h5>
+                        </div>
+                        <div class="row g-2">
+                            <!-- Witness 1 -->
+                            <div class="col-12">
+                                <div class="fw-semibold small text-muted mb-1"><i
+                                        class="bi bi-1-circle me-1"></i>Witness 1</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Name <span class="required-asterisk">*</span></label>
+                                <input type="text" class="form-control uppercase-input" name="witness_name1"
+                                    placeholder="Name" data-required="true">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Phone <span class="required-asterisk">*</span></label>
+                                <div class="phone-auto-container">
+                                    <div class="input-group">
+                                        <input type="tel" class="form-control phone-input" name="witness_phone1"
+                                            id="witness_phone1" placeholder="10-digit" maxlength="10"
+                                            inputmode="numeric" data-required="true">
+                                        <button type="button" class="btn btn-get-phone"
+                                            onclick="getNextPhone('witness_phone1')" title="Get next available phone">
+                                            <i class="bi bi-arrow-repeat"></i>
+                                        </button>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="phone-auto-indicator d-none" id="witness_phone1_indicator">
+                                            <i class="bi bi-magic"></i>Auto-filled
+                                        </div>
+                                        <div class="digit-counter">0/10 digits</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Address <span class="required-asterisk">*</span></label>
+                                <input type="text" class="form-control uppercase-input" name="witness_address1"
+                                    id="witness_address1" placeholder="Address" data-required="true">
+                            </div>
+
+                            <!-- Witness 2 -->
+                            <div class="col-12 mt-2">
+                                <div class="fw-semibold small text-muted mb-1"><i
+                                        class="bi bi-2-circle me-1"></i>Witness 2</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Name <span class="required-asterisk">*</span></label>
+                                <input type="text" class="form-control uppercase-input" name="witness_name2"
+                                    placeholder="Name" data-required="true">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Phone <span class="required-asterisk">*</span></label>
+                                <div class="phone-auto-container">
+                                    <div class="input-group">
+                                        <input type="tel" class="form-control phone-input" name="witness_phone2"
+                                            id="witness_phone2" placeholder="10-digit" maxlength="10"
+                                            inputmode="numeric" data-required="true">
+                                        <button type="button" class="btn btn-get-phone"
+                                            onclick="getNextPhone('witness_phone2')" title="Get next available phone">
+                                            <i class="bi bi-arrow-repeat"></i>
+                                        </button>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="phone-auto-indicator d-none" id="witness_phone2_indicator">
+                                            <i class="bi bi-magic"></i>Auto-filled
+                                        </div>
+                                        <div class="digit-counter">0/10 digits</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Address <span class="required-asterisk">*</span></label>
+                                <input type="text" class="form-control uppercase-input" name="witness_address2"
+                                    id="witness_address2" placeholder="Address" data-required="true">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-header">
+                            <div class="section-icon"><i class="bi bi-calendar-event"></i></div>
+                            <h5 class="section-title">Date of Submission</h5>
+                        </div>
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-4">
+                                <label class="form-label">Select Date <span class="required-asterisk">*</span></label>
+                                <input type="date" class="form-control" id="num_date_picker" data-required="true">
+                                <input type="hidden" id="num_date" name="num_date">
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mt-4 small text-muted" id="numDatePreview" style="display:none;">
+                                    Formatted: <strong id="numDatePreviewValue"></strong>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" type="checkbox" id="syncDates" checked>
+                                    <label class="form-check-label small text-muted" for="syncDates"><i
+                                            class="bi bi-link-45deg me-1"></i>Auto-format</label>
+                                </div>
+                            </div>
+                            <input type="hidden" id="alpha_day" value="">
+                            <input type="hidden" id="alpha_month" value="">
+                            <input type="hidden" id="alpha_year" value="">
+                            <input type="hidden" id="alpha_date" name="alpha_date">
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="button" id="previewBtn" class="btn btn-primary btn-lg" onclick="showPreview()">
+                            <i class="bi bi-eye-fill me-2"></i>Preview Document
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- PREVIEW SECTION -->
+            <div id="previewSection" class="d-none">
+                <div class="preview-section">
+                    <div class="preview-header">
+                        <div class="preview-title"><i class="bi bi-eye-fill"></i>Document Preview</div>
+                        <span class="preview-badge"><span id="previewTemplateCount">0</span> files</span>
+                    </div>
+                    <table class="preview-table" id="previewContent"></table>
+                    <div class="preview-actions">
+                        <button type="button" class="btn btn-cancel-preview" onclick="cancelPreview()">
+                            <i class="bi bi-x-circle me-1"></i>Cancel
+                        </button>
+                        <button type="button" class="btn btn-edit-all" id="editAllBtn" onclick="toggleEditMode()">
+                            <i class="bi bi-pencil-square me-1"></i>Edit
+                        </button>
+                        <button type="button" class="btn btn-save-preview d-none" id="savePreviewBtn"
+                            onclick="savePreviewChanges()">
+                            <i class="bi bi-check-circle me-1"></i>Save
+                        </button>
+                        <button type="button" class="btn btn-draft" id="draftBtn" onclick="saveDraft()">
+                            <i class="bi bi-journal-plus me-1"></i>Save Draft
+                        </button>
+                        <button type="button" class="btn btn-submit-approval" id="submitApprovalBtn"
+                            onclick="submitForApproval()">
+                            <span id="submitSpinner" class="spinner-border spinner-border-sm me-1 d-none"></span>
+                            <i class="bi bi-send-fill me-1" id="submitIcon"></i>Submit for Approval
+                        </button>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            After submission, admin will review and generate your documents.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DRAFT SAVED SECTION -->
+            <div id="draftSavedSection" class="d-none">
+                <div class="form-section text-center">
+                    <i class="bi bi-journal-check" style="font-size:3rem; color: var(--primary-gray);"></i>
+                    <h4 class="fw-bold mt-2" style="color: var(--primary-gray);">Draft Saved!</h4>
+                    <p class="text-muted">Your document has been saved as a draft. You can continue editing it later
+                        from the dashboard.</p>
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-primary me-2" onclick="resetForm()">
+                            <i class="bi bi-plus-circle me-1"></i>Create New
+                        </button>
+                        <a href="/dashboard" class="btn btn-outline-primary">
+                            <i class="bi bi-speedometer2 me-1"></i>Go to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUBMITTED FOR APPROVAL SECTION -->
+            <div id="submittedSection" class="d-none">
+                <div class="form-section text-center">
+                    <i class="bi bi-send-check" style="font-size:3rem; color: var(--primary-dark);"></i>
+                    <h4 class="fw-bold mt-2" style="color: var(--primary-dark);">Submitted for Approval!</h4>
+                    <p class="text-muted">Your document has been submitted for admin approval. You will be notified once
+                        it's approved and generated.</p>
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-primary me-2" onclick="resetForm()">
+                            <i class="bi bi-plus-circle me-1"></i>Create New Document
+                        </button>
+                        <a href="/dashboard" class="btn btn-outline-primary">
+                            <i class="bi bi-speedometer2 me-1"></i>Go to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <span class="fw-bold"><i class="bi bi-file-earmark-text-fill me-2"></i>AYRA Services</span>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <span class="small opacity-75">&copy; 2026 - Document Processing Platform</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="toast" class="toast" role="alert">
+            <div class="toast-header">
+                <i id="toastIcon" class="bi me-2"></i>
+                <strong id="toastTitle" class="me-auto"></strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div id="toastBody" class="toast-body"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js')}}"></script>
+</body>
+
+</html>

@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AYRA Services - Document Processing Platform</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <div class="brand-logo me-2"><i class="bi bi-file-earmark-text-fill"></i></div>
+                <div class="brand-text">
+                    <span class="brand-name">AYRA</span>
+                    <span class="text-dark ms-1 d-none d-sm-inline" style="opacity: 0.8;">Services</span>
+                </div>
+            </a>
+
+            <!-- Mobile Toggle Button -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+                aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Collapsible Content -->
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="nav nav-tabs-custom ms-lg-auto" id="mainTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home"
+                            type="button" role="tab">
+                            <i class="bi bi-house-fill me-2"></i>Home
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="navbar-nav ms-lg-3">
+                    <!-- Show when NOT logged in -->
+                    <div id="loginBtnContainer">
+                        <button class="btn btn-login-nav" onclick="showLoginModal()">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                        </button>
+                    </div>
+
+                    <!-- Show when logged in -->
+                    <div id="userDropdownContainer" class="d-none">
+                        <div class="dropdown user-dropdown">
+                            <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <div class="user-avatar" id="userAvatarNav">U</div>
+                                <span id="userNameNav">User</span>
+                                <i class="bi bi-chevron-down ms-auto"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li class="dropdown-header">
+                                    <strong id="userNameHeader">User</strong>
+                                    <br><small class="text-muted" id="userRoleHeader">User Account</small>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="/dashboard" id="dashboardLink">
+                                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                                    </a>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="logout()">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="time-display">
+                        <i class="bi bi-clock me-1"></i><span id="current-time"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="tab-content" id="mainTabsContent">
+
+                <!-- HOME TAB -->
+                <div class="tab-pane fade show active" id="home" role="tabpanel">
+                    <div class="hero-section">
+                        <h1 class="hero-title">Document Processing Platform</h1>
+                        <p class="hero-subtitle">Streamline your document generation with our powerful and easy-to-use
+                            services</p>
+                    </div>
+
+                    <!-- Service Cards -->
+                    <div class="row g-4 justify-content-center">
+                        <div class="col-12 col-md-6 col-lg-5">
+                            <div class="service-card name-change fade-in" onclick="handleServiceClick('namechange')">
+                                <span class="service-badge badge-active">Active</span>
+                                <div class="service-icon">
+                                    <i class="bi bi-person-lines-fill"></i>
+                                </div>
+                                <h3 class="service-title">Name Changing Services</h3>
+                                <p class="service-description">
+                                    Process name change documents including affidavits, gazette notifications,
+                                    and supporting documents for major, minor, and religion-based name changes.
+                                </p>
+                                <div class="mt-3 service-tags">
+                                    <span class="badge bg-primary">Major</span>
+                                    <span class="badge bg-success">Minor</span>
+                                    <span class="badge bg-warning">Religion</span>
+                                </div>
+
+                                <!-- Login Required Overlay -->
+                                <div class="login-required-overlay" id="namechangeLoginOverlay">
+                                    <div class="login-prompt">
+                                        <i class="bi bi-lock-fill"></i>
+                                        <p>Login required to access</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-5">
+                            <div class="service-card public-notice fade-in" style="animation-delay: 0.2s;"
+                                onclick="showComingSoon()">
+                                <span class="service-badge badge-coming-soon">Coming Soon</span>
+                                <div class="service-icon">
+                                    <i class="bi bi-newspaper"></i>
+                                </div>
+                                <h3 class="service-title">Public Notice</h3>
+                                <p class="service-description">
+                                    Generate and manage public notices for newspapers, official publications,
+                                    and legal announcements with customizable templates.
+                                </p>
+                                <div class="mt-3 service-tags">
+                                    <span class="badge bg-secondary">Newspaper</span>
+                                    <span class="badge bg-secondary">Gazette</span>
+                                    <span class="badge bg-secondary">Legal</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Login Modal -->
+    <div class="modal fade login-modal" id="loginModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="login-logo">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                    </div>
+                    <h5 class="modal-title" style="color:white">Welcome Back</h5>
+                    <p class="mb-0 opacity-75">Sign in to your account</p>
+                </div>
+                <div class="modal-body">
+                    <div id="loginAlertContainer"></div>
+
+                    <form id="loginForm" onsubmit="handleLogin(event)">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-envelope me-1"></i>Email Address
+                            </label>
+                            <input type="email" class="form-control" id="loginEmail" placeholder="Enter your email"
+                                required autocomplete="email" inputmode="email">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-lock me-1"></i>Password
+                            </label>
+                            <div class="input-password-wrapper">
+                                <input type="password" class="form-control" id="loginPassword"
+                                    placeholder="Enter your password" required autocomplete="current-password">
+                                <button type="button" class="password-toggle"
+                                    onclick="togglePassword('loginPassword', 'loginToggleIcon')"
+                                    aria-label="Toggle password visibility">
+                                    <i class="bi bi-eye" id="loginToggleIcon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-login" id="loginSubmitBtn">
+                            <span id="loginBtnText">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                            </span>
+                            <span id="loginBtnSpinner" class="d-none">
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                Signing In...
+                            </span>
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <a href="#" class="text-decoration-none" onclick="showForgotPassword()">
+                            <i class="bi bi-question-circle me-1"></i>Forgot Password?
+                        </a>
+                    </div>
+
+                    <div class="divider-text">or</div>
+
+                    <button type="button" class="btn btn-outline-primary w-100" onclick="switchToRegister()">
+                        <i class="bi bi-person-plus me-2"></i>Create New Account
+                    </button>
+                </div>
+                <div class="modal-footer justify-content-center border-0 pt-0">
+                    <button type="button" class="btn btn-link text-secondary" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Modal - SIMPLIFIED WITHOUT OTP -->
+    <div class="modal fade register-modal" id="registerModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="register-logo">
+                        <i class="bi bi-person-plus"></i>
+                    </div>
+                    <h5 class="modal-title" style="color:white">Create Account</h5>
+                    <p class="mb-0 opacity-75">Join AYRA Services</p>
+                </div>
+                <div class="modal-body">
+                    <div id="registerAlertContainer"></div>
+
+                    <!-- Approval Notice -->
+                    <div class="alert alert-info py-2 mb-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <small>New accounts require admin approval before login.</small>
+                    </div>
+
+                    <form id="registerForm" onsubmit="handleRegister(event)">
+                        <!-- Full Name -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-person me-1"></i>Full Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="regFullName" placeholder="Enter your full name"
+                                required autocomplete="name">
+                        </div>
+
+                        <!-- Email -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-envelope me-1"></i>Email Address <span class="text-danger">*</span>
+                            </label>
+                            <input type="email" class="form-control" id="regEmail" placeholder="Enter your email"
+                                required autocomplete="email" inputmode="email">
+                        </div>
+
+                        <!-- Phone Number (OPTIONAL - NO OTP) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-phone me-1"></i>Phone Number
+                                <small class="text-muted fw-normal">(Optional)</small>
+                            </label>
+                            <input type="tel" class="form-control" id="regPhone"
+                                placeholder="10-digit mobile number (optional)" maxlength="10" pattern="[0-9]{10}"
+                                inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>For account recovery purposes
+                            </small>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-lock me-1"></i>Password <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="regPassword"
+                                    placeholder="Enter password (min 8 characters)" required autocomplete="new-password"
+                                    oninput="checkPasswordStrength(this.value)" style="border-radius: 10px 0 0 10px;">
+                                <button type="button" class="password-toggle"
+                                    onclick="togglePassword('regPassword', 'regPasswordToggleIcon')"
+                                    aria-label="Toggle password visibility"
+                                    style="border-radius: 0 10px 10px 0; border: 2px solid var(--border-light); border-left: none; background: var(--off-white);">
+                                    <i class="bi bi-eye" id="regPasswordToggleIcon"></i>
+                                </button>
+                            </div>
+                            <div class="password-strength mt-2">
+                                <div class="progress" style="height: 5px;">
+                                    <div class="progress-bar" id="passwordStrengthBar" role="progressbar"
+                                        style="width: 0%"></div>
+                                </div>
+                                <small class="password-strength-text" id="passwordStrengthText"></small>
+                            </div>
+                        </div>
+
+                        <!-- Confirm Password -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-lock-fill me-1"></i>Confirm Password <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-password-wrapper">
+                                <input type="password" class="form-control" id="regConfirmPassword"
+                                    placeholder="Confirm your password" required autocomplete="new-password">
+                                <button type="button" class="password-toggle"
+                                    onclick="togglePassword('regConfirmPassword', 'regConfirmToggleIcon')"
+                                    aria-label="Toggle password visibility">
+                                    <i class="bi bi-eye" id="regConfirmToggleIcon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Terms and Conditions -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                                <label class="form-check-label small" for="agreeTerms">
+                                    I agree to the <a href="#" onclick="showTerms(); return false;">Terms of Service</a>
+                                    and
+                                    <a href="#" onclick="showPrivacy(); return false;">Privacy Policy</a>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-register" id="registerSubmitBtn">
+                            <span id="registerBtnText">
+                                <i class="bi bi-person-plus me-2"></i>Create Account
+                            </span>
+                            <span id="registerBtnSpinner" class="d-none">
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                Creating Account...
+                            </span>
+                        </button>
+                    </form>
+
+                    <div class="divider-text">or</div>
+
+                    <button type="button" class="btn btn-outline-primary w-100" onclick="switchToLogin()">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Already have an account? Sign In
+                    </button>
+                </div>
+                <div class="modal-footer justify-content-center border-0 pt-0">
+                    <button type="button" class="btn btn-link text-secondary" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <span class="fw-bold"><i class="bi bi-file-earmark-text-fill me-2"></i>AYRA Services</span>
+            <span class="small">&copy; 2026 - Document Processing Platform</span>
+        </div>
+    </footer>
+
+    <!-- Toast -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i id="toastIcon" class="bi me-2"></i>
+                <strong id="toastTitle" class="me-auto"></strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div id="toastBody" class="toast-body"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // ==================== GLOBAL VARIABLES ====================
+        var serviceType = null;
+        var isLoggedIn = false;
+        var currentUser = null;
+        var loginModal = null;
+        var registerModal = null;
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize modals
+            loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+            registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
+
+            // Check auth status
+            checkAuthStatus();
+
+            // Update time
+            updateTime();
+            setInterval(updateTime, 60000);
+
+            // Close navbar on tab click (mobile)
+            document.querySelectorAll('.nav-tabs-custom .nav-link').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    var navbarCollapse = document.getElementById('navbarContent');
+                    var bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse);
+                    if (bsCollapse) {
+                        bsCollapse.hide();
+                    }
+                });
+            });
+
+            // Check for login redirect
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('show_login') === 'true') {
+                window.history.replaceState({}, document.title, '/');
+                setTimeout(function () {
+                    if (!isLoggedIn) {
+                        showLoginModal();
+                    }
+                }, 500);
+            }
+        });
+
+        // ==================== AUTHENTICATION ====================
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch('/api/auth/check');
+                const data = await response.json();
+
+                if (data.authenticated && data.user) {
+                    isLoggedIn = true;
+                    currentUser = data.user;
+                    updateUIForLoggedInUser();
+                } else {
+                    isLoggedIn = false;
+                    currentUser = null;
+                    updateUIForLoggedOutUser();
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+                isLoggedIn = false;
+                currentUser = null;
+                updateUIForLoggedOutUser();
+            }
+        }
+
+        function updateUIForLoggedInUser() {
+            document.getElementById('loginBtnContainer').classList.add('d-none');
+            document.getElementById('userDropdownContainer').classList.remove('d-none');
+
+            document.getElementById('userAvatarNav').textContent = currentUser.name.charAt(0).toUpperCase();
+            document.getElementById('userNameNav').textContent = currentUser.name;
+            document.getElementById('userNameHeader').textContent = currentUser.name;
+
+            var roleText = 'User Account';
+            var dashboardUrl = '/dashboard';
+
+            if (currentUser.role === 'super_admin') {
+                roleText = 'Super Administrator';
+                dashboardUrl = '/superadmin/dashboard';
+            } else if (currentUser.role === 'admin') {
+                roleText = 'Administrator';
+                dashboardUrl = '/admin/dashboard';
+            }
+
+            document.getElementById('userRoleHeader').textContent = roleText;
+            document.getElementById('dashboardLink').href = dashboardUrl;
+
+            // Hide login overlay on services
+            var overlay = document.getElementById('namechangeLoginOverlay');
+            if (overlay) {
+                overlay.classList.remove('show');
+            }
+        }
+
+        function updateUIForLoggedOutUser() {
+            document.getElementById('loginBtnContainer').classList.remove('d-none');
+            document.getElementById('userDropdownContainer').classList.add('d-none');
+            document.getElementById('namechangeLoginOverlay').classList.add('show');
+        }
+
+        // ==================== MODAL FUNCTIONS ====================
+        function showLoginModal() {
+            // Close mobile navbar
+            var navbarCollapse = document.getElementById('navbarContent');
+            var bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse);
+            if (bsCollapse) {
+                bsCollapse.hide();
+            }
+
+            // Reset form
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginAlertContainer').innerHTML = '';
+
+            loginModal.show();
+
+            setTimeout(function () {
+                document.getElementById('loginEmail').focus();
+            }, 300);
+        }
+
+        function showRegisterModal() {
+            // Close mobile navbar
+            var navbarCollapse = document.getElementById('navbarContent');
+            var bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse);
+            if (bsCollapse) {
+                bsCollapse.hide();
+            }
+
+            resetRegisterForm();
+            registerModal.show();
+
+            setTimeout(function () {
+                document.getElementById('regFullName').focus();
+            }, 300);
+        }
+
+        function switchToRegister() {
+            loginModal.hide();
+            setTimeout(function () {
+                showRegisterModal();
+            }, 300);
+        }
+
+        function switchToLogin() {
+            registerModal.hide();
+            setTimeout(function () {
+                showLoginModal();
+            }, 300);
+        }
+
+        function resetRegisterForm() {
+            document.getElementById('registerForm').reset();
+            document.getElementById('registerAlertContainer').innerHTML = '';
+            document.getElementById('passwordStrengthBar').style.width = '0%';
+            document.getElementById('passwordStrengthText').textContent = '';
+        }
+
+        // ==================== PASSWORD FUNCTIONS ====================
+        function togglePassword(inputId, iconId) {
+            const passwordInput = document.getElementById(inputId);
+            const toggleIcon = document.getElementById(iconId);
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('bi-eye');
+                toggleIcon.classList.add('bi-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('bi-eye-slash');
+                toggleIcon.classList.add('bi-eye');
+            }
+        }
+
+        function checkPasswordStrength(password) {
+            const bar = document.getElementById('passwordStrengthBar');
+            const text = document.getElementById('passwordStrengthText');
+
+            let strength = 0;
+            let label = '';
+            let color = '';
+
+            if (password.length === 0) {
+                bar.style.width = '0%';
+                text.textContent = '';
+                return;
+            }
+
+            if (password.length >= 8) strength += 25;
+            if (password.length >= 12) strength += 10;
+            if (/[a-z]/.test(password)) strength += 15;
+            if (/[A-Z]/.test(password)) strength += 15;
+            if (/[0-9]/.test(password)) strength += 15;
+            if (/[^A-Za-z0-9]/.test(password)) strength += 20;
+
+            if (strength < 30) {
+                label = 'Weak';
+                color = '#dc3545';
+            } else if (strength < 60) {
+                label = 'Fair';
+                color = '#ffc107';
+            } else if (strength < 80) {
+                label = 'Good';
+                color = '#17a2b8';
+            } else {
+                label = 'Strong';
+                color = '#28a745';
+            }
+
+            bar.style.width = strength + '%';
+            bar.style.backgroundColor = color;
+            text.textContent = label;
+            text.style.color = color;
+        }
+
+        // ==================== LOGIN FUNCTIONS ====================
+        function showLoginAlert(type, message) {
+            const container = document.getElementById('loginAlertContainer');
+            const alertClass = type === 'success' ? 'alert-success' : (type === 'warning' ? 'alert-warning' : 'alert-danger');
+            const icon = type === 'success' ? 'bi-check-circle-fill' : (type === 'warning' ? 'bi-exclamation-circle-fill' : 'bi-exclamation-triangle-fill');
+
+            container.innerHTML = `
+                <div class="alert ${alertClass} d-flex align-items-center py-2" role="alert">
+                    <i class="bi ${icon} me-2"></i>
+                    <div>${message}</div>
+                </div>
+            `;
+        }
+
+        function setLoginLoading(loading) {
+            const btn = document.getElementById('loginSubmitBtn');
+            const text = document.getElementById('loginBtnText');
+            const spinner = document.getElementById('loginBtnSpinner');
+
+            btn.disabled = loading;
+            text.classList.toggle('d-none', loading);
+            spinner.classList.toggle('d-none', !loading);
+        }
+
+
+        async function handleLogin(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showLoginAlert('error', 'Please enter both email and password');
+                return;
+            }
+
+            setLoginLoading(true);
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showLoginAlert('success', 'Login successful! Redirecting...');
+                    isLoggedIn = true;
+                    currentUser = data.user;
+
+                    setTimeout(function () {
+                        loginModal.hide();
+
+                        // ✅ FIX: Redirect based on role
+                        if (data.redirect) {
+                            // Use redirect URL from server
+                            window.location.href = data.redirect;
+                        } else if (serviceType) {
+                            // If user clicked on a service before login
+                            navigateToService(serviceType);
+                        } else {
+                            // Default: redirect to appropriate dashboard
+                            if (currentUser.role === 'super_admin') {
+                                window.location.href = '/superadmin/dashboard';
+                            } else if (currentUser.role === 'admin') {
+                                window.location.href = '/admin/dashboard';
+                            } else {
+                                window.location.href = '/dashboard';
+                            }
+                        }
+                    }, 800);
+                } else {
+                    // Check for pending approval message
+                    if (data.message && data.message.toLowerCase().includes('pending')) {
+                        showLoginAlert('warning', data.message);
+                    } else {
+                        showLoginAlert('error', data.message || 'Login failed');
+                    }
+                    setLoginLoading(false);
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showLoginAlert('error', 'Connection error. Please try again.');
+                setLoginLoading(false);
+            }
+        }
+        // ==================== REGISTER FUNCTIONS ====================
+        function showRegisterAlert(type, message) {
+            const container = document.getElementById('registerAlertContainer');
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const icon = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+
+            container.innerHTML = `
+                <div class="alert ${alertClass} d-flex align-items-center py-2" role="alert">
+                    <i class="bi ${icon} me-2"></i>
+                    <div>${message}</div>
+                </div>
+            `;
+
+            // Scroll to top of modal body
+            document.querySelector('#registerModal .modal-body').scrollTop = 0;
+        }
+
+        function setRegisterLoading(loading) {
+            const btn = document.getElementById('registerSubmitBtn');
+            const text = document.getElementById('registerBtnText');
+            const spinner = document.getElementById('registerBtnSpinner');
+
+            btn.disabled = loading;
+            text.classList.toggle('d-none', loading);
+            spinner.classList.toggle('d-none', !loading);
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+
+            const fullName = document.getElementById('regFullName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+            const agreeTerms = document.getElementById('agreeTerms').checked;
+
+            // Validation
+            if (!fullName || !email || !password || !confirmPassword) {
+                showRegisterAlert('error', 'Please fill in all required fields');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showRegisterAlert('error', 'Passwords do not match');
+                return;
+            }
+
+            if (password.length < 8) {
+                showRegisterAlert('error', 'Password must be at least 8 characters long');
+                return;
+            }
+
+            // Validate phone if provided
+            if (phone && phone.length !== 10) {
+                showRegisterAlert('error', 'Please enter a valid 10-digit phone number');
+                return;
+            }
+
+            if (!agreeTerms) {
+                showRegisterAlert('error', 'Please agree to the Terms of Service and Privacy Policy');
+                return;
+            }
+
+            setRegisterLoading(true);
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: fullName,
+                        email: email,
+                        phone: phone || null,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showRegisterAlert('success',
+                        'Account created successfully! Your account is pending admin approval. ' +
+                        'You will be notified once approved.');
+
+                    setTimeout(function () {
+                        registerModal.hide();
+                        resetRegisterForm();
+
+                        setTimeout(function () {
+                            showLoginModal();
+                            document.getElementById('loginEmail').value = email;
+                            showToast('info', 'Pending Approval',
+                                'Your account is awaiting admin approval. Please check back later.');
+                        }, 300);
+                    }, 2500);
+                } else {
+                    showRegisterAlert('error', data.message || 'Registration failed');
+                    setRegisterLoading(false);
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showRegisterAlert('error', 'Connection error. Please try again.');
+                setRegisterLoading(false);
+            }
+        }
+
+        // ==================== LOGOUT ====================
+        async function logout() {
+            try {
+                const response = await fetch('/api/auth/logout', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    isLoggedIn = false;
+                    currentUser = null;
+                    updateUIForLoggedOutUser();
+                    showToast('success', 'Logged Out', 'You have been logged out successfully');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                isLoggedIn = false;
+                currentUser = null;
+                updateUIForLoggedOutUser();
+            }
+        }
+
+        // ==================== HELPER FUNCTIONS ====================
+        function showForgotPassword() {
+            loginModal.hide();
+            showToast('info', 'Forgot Password', 'Please contact your administrator to reset your password.');
+        }
+
+        function showTerms() {
+            showToast('info', 'Terms of Service', 'Terms of Service page coming soon.');
+        }
+
+        function showPrivacy() {
+            showToast('info', 'Privacy Policy', 'Privacy Policy page coming soon.');
+        }
+
+        // ==================== SERVICE HANDLING ====================
+        function handleServiceClick(service) {
+            serviceType = service;
+
+            if (!isLoggedIn) {
+                showLoginModal();
+                return;
+            }
+
+            navigateToService(service);
+        }
+
+        function navigateToService(service) {
+            if (service === 'namechange') {
+                window.location.href = '/namechangeservice';
+            } else if (service === 'publicnotice') {
+                window.location.href = '/publicnotice';
+            }
+        }
+
+        // ==================== TIME ====================
+        function updateTime() {
+            var now = new Date();
+            var el = document.getElementById('current-time');
+            if (el) {
+                el.textContent = now.toLocaleString('en-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+        }
+
+        // ==================== UTILITIES ====================
+        function showComingSoon() {
+            showToast('info', 'Coming Soon', 'Public Notice feature will be available soon!');
+        }
+
+        function showToast(type, title, msg) {
+            var toast = document.getElementById('toast');
+            var toastIcon = document.getElementById('toastIcon');
+            var toastTitle = document.getElementById('toastTitle');
+            var toastBody = document.getElementById('toastBody');
+
+            toastIcon.className = 'bi me-2';
+            var iconMap = {
+                'success': 'bi-check-circle-fill text-success',
+                'warning': 'bi-exclamation-triangle-fill text-warning',
+                'info': 'bi-info-circle-fill text-info',
+                'error': 'bi-exclamation-triangle-fill text-danger'
+            };
+            toastIcon.classList.add(...(iconMap[type] || iconMap['info']).split(' '));
+
+            toastTitle.textContent = title;
+            toastBody.textContent = msg;
+
+            new bootstrap.Toast(toast).show();
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: ayraservices
+    env: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: IS_PRODUCTION
+        value: "true"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ayraservices-db
+          property: connectionString
+
+databases:
+  - name: ayraservices-db
+    databaseName: ayraservices
+    user: ayraservices
+    plan: free
