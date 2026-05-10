@@ -88,7 +88,6 @@ Ayra-Services/
 ---
 
 ### `app.py` — Flask App Entry Point
-**Size:** ~80 lines (was 4000+)
 **Purpose:** Initialize Flask app and register all blueprints
 
 **What it does:**
