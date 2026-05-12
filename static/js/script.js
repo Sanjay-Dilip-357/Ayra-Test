@@ -814,14 +814,14 @@ function selectTemplate(t) {
 
     // Clear and fill phones
     clearAllPhoneInputs();
-    setTimeout(function () {
-        autoFillAllPhones();
-    }, 200);
+    setTimeout(function () {autoFillAllPhones();}, 200);
+
+    // Re-attach name validation for newly visible fields
+    setTimeout(() => initNameFieldValidation(), 100);
+
 
     // Scroll to form
-    setTimeout(function () {
-        document.getElementById('processForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
+    setTimeout(function () {document.getElementById('processForm').scrollIntoView({ behavior: 'smooth', block: 'start' });}, 100);
 }
 
 function fetchTemplateFiles(t) {
@@ -1032,6 +1032,13 @@ function showPreview() {
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Loading...';
 
+    // Validate name fields
+    if (!validateAllNameFields()) {
+        showToast('warning', 'Invalid Names', 
+            'Name fields cannot contain numbers or special characters.');
+        return;
+    }
+    
     fetch('/preview', { method: 'POST', body: fd })
         .then(function (r) { return r.json(); })
         .then(function (res) {
@@ -1407,5 +1414,347 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeEventListeners();
     loadPhoneStats();
     updateTime();
+    initNameFieldValidation();
     setInterval(updateTime, 60000);
 });
+
+
+
+// ==================== NAME FIELD VALIDATION ====================
+
+/**
+ * Validates name fields - allows only letters, spaces, hyphens, apostrophes, and dots
+ * Prevents numbers and most special characters
+ */
+function initNameFieldValidation() {
+    // Define selectors for all name fields across all templates
+    const nameFieldSelectors = [
+        // Major template
+        'input[name="old_name"]',
+        'input[name="new_name"]',
+        'input[name="fatherspouse_name"]',
+        'input[name="father_name"]',
+        'input[name="spouse_name"]',
+        'input[name="witness_name1"]',
+        'input[name="witness_name2"]',
+        
+        // Minor template
+        'input[name="fathermother_name"]',
+        'input[name="guardian_father_name"]',
+        'input[name="guardian_spouse_name"]',
+        
+        // Specific IDs
+        '#major_old_name',
+        '#major_fatherspouse_name',
+        '#major_father_name',
+        '#major_spouse_name',
+        '#minor_old_name',
+        '#minor_fathermother_name',
+        '#minor_fatherspouse_name',
+        '#minor_guardian_father_name',
+        '#minor_guardian_spouse_name',
+        '#religion_old_name',
+        '#religion_fatherspouse_name',
+        '#religion_father_name',
+        '#religion_spouse_name',
+    ];
+
+    // Use a Set to avoid duplicate event listeners
+    const processedInputs = new Set();
+
+    nameFieldSelectors.forEach(selector => {
+        document.querySelectorAll(selector).forEach(input => {
+            if (!processedInputs.has(input)) {
+                processedInputs.add(input);
+                attachNameValidation(input);
+            }
+        });
+    });
+
+    // Also attach to dynamically added alias fields via MutationObserver
+    observeAliasContainers();
+}
+
+/**
+ * Attaches name validation events to a specific input element
+ */
+function attachNameValidation(input) {
+    // Mark this input as a name field
+    input.setAttribute('data-name-field', 'true');
+
+    // Prevent invalid characters on keydown
+    input.addEventListener('keydown', handleNameKeydown);
+
+    // Clean on input (handles paste, autofill, etc.)
+    input.addEventListener('input', handleNameInput);
+
+    // Clean on paste
+    input.addEventListener('paste', handleNamePaste);
+
+    // Visual feedback on invalid key
+    input.addEventListener('keypress', handleNameKeypress);
+}
+
+/**
+ * Handles keydown event - blocks number keys and special chars
+ */
+function handleNameKeydown(e) {
+    const allowedKeys = [
+        'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+        'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+        'Home', 'End', 'Shift', 'Control', 'Alt', 'Meta',
+        'CapsLock', 'F1', 'F2', 'F3', 'F4', 'F5',
+        'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'
+    ];
+
+    // Allow control combinations (Ctrl+C, Ctrl+V, Ctrl+A, etc.)
+    if (e.ctrlKey || e.metaKey) return;
+
+    // Allow special navigation/editing keys
+    if (allowedKeys.includes(e.key)) return;
+
+    // Allow letters (a-z, A-Z)
+    if (/^[a-zA-Z]$/.test(e.key)) return;
+
+    // Allow space
+    if (e.key === ' ') return;
+
+    // Allow hyphen (for compound names like Mary-Jane)
+    if (e.key === '-') return;
+
+    // Allow apostrophe (for names like O'Brien)
+    if (e.key === "'") return;
+
+    // Allow dot (for abbreviated names like A. Kumar)
+    if (e.key === '.') return;
+
+    // Block everything else (numbers, symbols, etc.)
+    e.preventDefault();
+    showNameFieldError(e.target);
+}
+
+/**
+ * Handles keypress for additional visual feedback
+ */
+function handleNameKeypress(e) {
+    // Numbers: keyCodes 48-57 (0-9)
+    if (e.charCode >= 48 && e.charCode <= 57) {
+        e.preventDefault();
+        showNameFieldError(e.target);
+        return;
+    }
+
+    // Allow only valid name characters
+    const char = String.fromCharCode(e.charCode);
+    if (!/^[a-zA-Z\s\-'.]$/.test(char) && e.charCode !== 0) {
+        e.preventDefault();
+        showNameFieldError(e.target);
+    }
+}
+
+/**
+ * Handles input event - cleans pasted/autofilled content
+ */
+function handleNameInput(e) {
+    const input = e.target;
+    const originalValue = input.value;
+    const cursorPos = input.selectionStart;
+
+    // Remove all invalid characters (keep letters, spaces, hyphens, apostrophes, dots)
+    const cleanedValue = originalValue.replace(/[^a-zA-Z\s\-'.]/g, '');
+
+    if (cleanedValue !== originalValue) {
+        // Calculate new cursor position
+        const diff = originalValue.length - cleanedValue.length;
+        const newCursorPos = Math.max(0, cursorPos - diff);
+
+        input.value = cleanedValue;
+
+        // Restore cursor position
+        try {
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        } catch (err) {
+            // Some input types don't support setSelectionRange
+        }
+
+        showNameFieldError(input);
+    }
+}
+
+/**
+ * Handles paste event - cleans pasted content
+ */
+function handleNamePaste(e) {
+    e.preventDefault();
+
+    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+
+    // Clean the pasted text
+    const cleanedText = pastedText.replace(/[^a-zA-Z\s\-'.]/g, '');
+
+    // Insert cleaned text at cursor position
+    const input = e.target;
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const currentValue = input.value;
+
+    input.value = currentValue.substring(0, start) + cleanedText + currentValue.substring(end);
+
+    // Move cursor to end of inserted text
+    const newPos = start + cleanedText.length;
+    try {
+        input.setSelectionRange(newPos, newPos);
+    } catch (err) {
+        // Handle silently
+    }
+
+    // Trigger input event for other listeners (uppercase, alias preview, etc.)
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // Show info if content was stripped
+    if (cleanedText !== pastedText) {
+        showNameFieldError(input, 'Numbers/symbols removed from paste');
+    }
+}
+
+/**
+ * Shows visual error feedback on the field
+ */
+function showNameFieldError(input, message = 'Only letters allowed') {
+    // Remove existing error tooltip
+    const existingTooltip = input.parentElement.querySelector('.name-field-error');
+    if (existingTooltip) {
+        existingTooltip.remove();
+    }
+
+    // Add shake animation
+    input.classList.add('name-field-shake');
+    setTimeout(() => input.classList.remove('name-field-shake'), 400);
+
+    // Show brief error tooltip
+    const tooltip = document.createElement('div');
+    tooltip.className = 'name-field-error';
+    tooltip.innerHTML = `<i class="bi bi-exclamation-circle me-1"></i>${message}`;
+
+    // Insert after input or its parent group
+    const insertAfter = input.closest('.input-group') || input;
+    insertAfter.insertAdjacentElement('afterend', tooltip);
+
+    // Auto-remove after 2 seconds
+    setTimeout(() => {
+        if (tooltip.parentElement) {
+            tooltip.style.opacity = '0';
+            setTimeout(() => tooltip.remove(), 300);
+        }
+    }, 2000);
+}
+
+/**
+ * Validates a name value and returns result
+ */
+function validateNameValue(value, fieldLabel = 'Name') {
+    if (!value || value.trim() === '') {
+        return { valid: false, message: `${fieldLabel} is required` };
+    }
+
+    // Check for numbers
+    if (/\d/.test(value)) {
+        return { valid: false, message: `${fieldLabel} cannot contain numbers` };
+    }
+
+    // Check for invalid special characters
+    if (/[^a-zA-Z\s\-'.]/.test(value)) {
+        return { valid: false, message: `${fieldLabel} contains invalid characters` };
+    }
+
+    // Check minimum length (at least 2 characters)
+    if (value.trim().length < 2) {
+        return { valid: false, message: `${fieldLabel} is too short` };
+    }
+
+    return { valid: true, message: '' };
+}
+
+/**
+ * Observes alias containers for dynamically added alias input fields
+ */
+function observeAliasContainers() {
+    const aliasContainers = document.querySelectorAll(
+        '#major_alias_container, #minor_alias_container, #religion_alias_container'
+    );
+
+    aliasContainers.forEach(container => {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        // Find alias inputs within the added node
+                        const aliasInputs = node.querySelectorAll
+                            ? node.querySelectorAll('input.alias-input')
+                            : [];
+
+                        aliasInputs.forEach(input => {
+                            attachNameValidation(input);
+                        });
+
+                        // If the added node itself is an alias input
+                        if (node.classList && node.classList.contains('alias-input')) {
+                            attachNameValidation(node);
+                        }
+                    }
+                });
+            });
+        });
+
+        observer.observe(container, { childList: true, subtree: true });
+    });
+}
+
+/**
+ * Validates all name fields before form submission
+ * Returns true if all valid, false otherwise
+ */
+function validateAllNameFields() {
+    const activeSection = document.querySelector('.template-form-section.active');
+    if (!activeSection) return true;
+
+    const nameInputs = activeSection.querySelectorAll('[data-name-field="true"]');
+    const witnessSection = document.getElementById('commonSections');
+    const witnessNameInputs = witnessSection
+        ? witnessSection.querySelectorAll('[data-name-field="true"]')
+        : [];
+
+    const allNameInputs = [...nameInputs, ...witnessNameInputs];
+    let allValid = true;
+    let firstInvalidInput = null;
+
+    allNameInputs.forEach(input => {
+        // Only validate visible, required fields
+        if (input.offsetParent !== null && input.getAttribute('data-required') === 'true') {
+            const label = input.closest('.col-md-4, .col-12')
+                ?.querySelector('label')?.textContent?.trim()
+                ?.replace('*', '').trim() || 'Name';
+
+            const result = validateNameValue(input.value, label);
+
+            if (!result.valid && input.value.trim() !== '') {
+                // Only show error for name-format issues (not empty field errors)
+                if (/\d/.test(input.value) || /[^a-zA-Z\s\-'.]/.test(input.value)) {
+                    input.classList.add('is-invalid');
+                    showNameFieldError(input, result.message);
+                    allValid = false;
+                    if (!firstInvalidInput) firstInvalidInput = input;
+                }
+            } else {
+                input.classList.remove('is-invalid');
+            }
+        }
+    });
+
+    if (firstInvalidInput) {
+        firstInvalidInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstInvalidInput.focus();
+    }
+
+    return allValid;
+}
