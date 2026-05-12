@@ -6,127 +6,845 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Admin Dashboard - AYRA Services</title>
 
+    <!-- Bootstrap (kept for JS components: modal, tab, dropdown, toast, collapse) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+
+    <!-- Design system stylesheet (loads DM Serif Display + DM Sans via @import) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
     <style>
-        .super-admin-navbar {
-            background: linear-gradient(135deg, #dc3545 0%, #6f42c1 100%) !important;
+        /* ================================================================
+       DB CONSOLE — COMPLETE STYLES
+       ================================================================ */
+
+        /* ── Layout ── */
+        .db-console-wrapper {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 1rem;
         }
 
-        .super-admin-badge {
-            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: 600;
+        @media (max-width: 991.98px) {
+            .db-console-wrapper {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ── Sidebar ── */
+        .db-sidebar {
+            background: #f8f9fa;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem;
+            max-height: 700px;
+            overflow-y: auto;
+        }
+
+        .db-sidebar h6 {
+            font-size: 0.6875rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #333;
+            letter-spacing: 0.08em;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.375rem;
+            border-bottom: 1px solid #e5e7eb;
         }
 
-        .stats-card.super-admin {
-            border-left: 4px solid #dc3545;
-        }
-
-        .btn-create-admin {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-        }
-
-        .btn-create-admin:hover {
-            background: linear-gradient(135deg, #5568d3 0%, #63408b 100%);
-        }
-
-        .role-badge-super-admin {
-            background: linear-gradient(135deg, #dc3545 0%, #6f42c1 100%);
-            color: white;
-        }
-
-        .role-badge-admin {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .role-badge-user {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
-        }
-
-        /* Action Buttons */
-        .action-buttons-cell .btn {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.875rem;
-            margin: 0 2px;
+        .db-table-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.375rem 0.625rem;
+            margin-bottom: 0.25rem;
+            background: #fff;
+            border: 1px solid #e5e7eb;
             border-radius: 6px;
+            font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+            font-size: 0.75rem;
+            color: #1f2937;
+            cursor: pointer;
+            transition: all 0.15s ease;
         }
 
-        .btn-view {
+        .db-table-item:hover {
+            background: #1f2937;
+            color: #fff;
+            border-color: #1f2937;
+        }
+
+        .db-table-item .row-count {
+            font-size: 0.625rem;
+            padding: 0.1rem 0.4rem;
+            background: #f3f4f6;
+            border-radius: 999px;
+            color: #9ca3af;
+            flex-shrink: 0;
+        }
+
+        .db-table-item:hover .row-count {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+
+        .db-snippet {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            text-align: left;
+            padding: 0.375rem 0.625rem;
+            margin-bottom: 0.25rem;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: #4b5563;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            gap: 0.375rem;
+        }
+
+        .db-snippet:hover {
+            background: #1f2937;
+            color: #fff;
+            border-color: #1f2937;
+            transform: translateX(2px);
+        }
+
+        .db-snippet i {
+            color: #9ca3af;
+            flex-shrink: 0;
+        }
+
+        .db-snippet:hover i {
+            color: #fff;
+        }
+
+        /* ── Console Main ── */
+        .db-console-main {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            /* Prevent main area from overflowing its grid cell */
+            min-width: 0;
+        }
+
+        .db-console-warning {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.625rem;
+            padding: 0.625rem 1rem;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 8px;
+            color: #92400e;
+            font-size: 0.8125rem;
+        }
+
+        .db-console-warning i {
+            font-size: 1rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* ── Editor ── */
+        .db-editor {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .db-editor-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.625rem 1rem;
+            background: #161b22;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .db-prompt {
+            font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+            font-size: 0.75rem;
+            color: #8b949e;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .db-prompt::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #3fb950;
+            box-shadow: 0 0 6px rgba(63, 185, 80, 0.6);
+            flex-shrink: 0;
+        }
+
+        .db-prompt-path {
+            color: #e6edf3;
+            font-weight: 600;
+        }
+
+        .db-shortcut-hint {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6875rem;
+            color: #484f58;
+        }
+
+        .db-shortcut-hint kbd {
+            background: #21262d;
+            color: #e6edf3;
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+            font-size: 0.625rem;
+            border: 1px solid #30363d;
+        }
+
+        .db-query-input {
+            width: 100%;
+            min-height: 140px;
+            background: #0d1117;
+            color: #e6edf3;
+            border: none;
+            outline: none;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+            font-size: 0.875rem;
+            line-height: 1.7;
+            resize: vertical;
+            tab-size: 2;
+            display: block;
+        }
+
+        .db-query-input::placeholder {
+            color: #484f58;
+        }
+
+        .db-query-input::selection {
+            background: #264f78;
+        }
+
+        .db-editor-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #161b22;
+            border-top: 1px solid #30363d;
+            flex-wrap: wrap;
+        }
+
+        .db-mode-select {
+            background: #21262d;
+            color: #e6edf3;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 0.3125rem 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .db-mode-select:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+
+        .db-action-group {
+            display: flex;
+            gap: 0.375rem;
+            flex-wrap: wrap;
+        }
+
+        .db-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            line-height: 1.4;
+        }
+
+        .db-btn-run {
+            background: #238636;
+            color: #fff;
+            border-color: #238636;
+        }
+
+        .db-btn-run:hover {
+            background: #2ea043;
+            border-color: #2ea043;
+            transform: translateY(-1px);
+        }
+
+        .db-btn-run:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .db-btn-ghost {
+            background: transparent;
+            color: #8b949e;
+            border-color: #30363d;
+        }
+
+        .db-btn-ghost:hover {
+            background: #21262d;
+            color: #e6edf3;
+        }
+
+        .db-btn-ghost:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* ================================================================
+       RESULTS — THE CRITICAL SECTION
+       overflow: visible on the outer container
+       overflow: auto on the scroll body
+       width: max-content on the table itself
+       ================================================================ */
+
+        .db-results {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            /* MUST be visible — hidden clips horizontal scroll */
+            overflow: visible;
+            min-height: 120px;
+        }
+
+        .db-results-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 1rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e5e7eb;
+            border-radius: 12px 12px 0 0;
+            flex-wrap: wrap;
+            gap: 0.375rem;
+        }
+
+        .db-results-title {
+            font-size: 0.8125rem;
+            font-weight: 700;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .db-results-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            font-size: 0.6875rem;
+            color: #6b7280;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .meta-chip {
+            padding: 0.125rem 0.5rem;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 999px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .meta-chip.running {
+            border-color: #93c5fd;
+            color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .meta-chip.ok {
+            border-color: #bbf7d0;
+            color: #15803d;
+            background: #f0fdf4;
+        }
+
+        .meta-chip.err {
+            border-color: #fecaca;
+            color: #dc2626;
+            background: #fef2f2;
+        }
+
+        /* ── Scroll body — this is where scrolling happens ── */
+        .db-results-body {
+            max-height: 520px;
+            overflow-x: auto;
+            /* horizontal scroll */
+            overflow-y: auto;
+            /* vertical scroll */
+            -webkit-overflow-scrolling: touch;
+            background: #fff;
+            border-radius: 0 0 12px 12px;
+        }
+
+        /* Custom scrollbars — both axes */
+        .db-results-body::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+            /* horizontal scrollbar thickness */
+        }
+
+        .db-results-body::-webkit-scrollbar-track {
+            background: #f9fafb;
+        }
+
+        .db-results-body::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+
+        .db-results-body::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        .db-results-body::-webkit-scrollbar-corner {
+            background: #f9fafb;
+        }
+
+        /* ── Results table — KEY: max-content makes it expand past container ── */
+        .db-results-table {
+            width: max-content;
+            /* expands to fit ALL columns */
+            min-width: 100%;
+            /* fills container when few columns */
+            border-collapse: collapse;
+            font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+            font-size: 0.8125rem;
+        }
+
+        /* Sticky header — stays visible while scrolling vertically */
+        .db-results-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+        }
+
+        .db-results-table thead th {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            border-bottom: 2px solid #374151;
+            border-right: 1px solid #374151;
+        }
+
+        .db-results-table thead th:last-child {
+            border-right: none;
+        }
+
+        /* Row number header — sticky both top AND left (corner cell) */
+        .db-results-table thead th.row-num-header {
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            /* highest z-index — sits at the corner */
+            background: #111827;
+            width: 48px;
+            min-width: 48px;
+            text-align: center;
+            color: #6b7280;
+            border-right: 2px solid #374151;
+        }
+
+        /* Body rows */
+        .db-results-table tbody tr {
+            transition: background 0.1s ease;
+        }
+
+        .db-results-table tbody tr:nth-child(odd) {
+            background: #fff;
+        }
+
+        .db-results-table tbody tr:nth-child(even) {
+            background: #fafbfc;
+        }
+
+        .db-results-table tbody tr:hover td {
+            background: #f0f9ff;
+        }
+
+        /* Keep row-num background on hover */
+        .db-results-table tbody tr:hover .row-num {
+            background: #e8f4fd;
+        }
+
+        /* Body cells */
+        .db-results-table tbody td {
+            padding: 0.4375rem 0.75rem;
+            color: #374151;
+            vertical-align: middle;
+            white-space: nowrap;
+            /* single line — no wrapping */
+            max-width: 300px;
+            /* soft cap */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-bottom: 1px solid #f3f4f6;
+            border-right: 1px solid #f3f4f6;
+        }
+
+        .db-results-table tbody td:last-child {
+            border-right: none;
+        }
+
+        /* Expand cell on hover to reveal full content */
+        .db-results-table tbody td:hover {
+            white-space: normal;
+            overflow: visible;
+            max-width: none;
+            background: #fffbeb;
+            position: relative;
+            z-index: 1;
+            cursor: default;
+        }
+
+        /* Row number column — sticky left, always visible during horizontal scroll */
+        .db-results-table .row-num {
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            background: #f9fafb;
+            border-right: 2px solid #e5e7eb;
+            color: #9ca3af;
+            font-size: 0.6875rem;
+            text-align: center;
+            user-select: none;
+            white-space: nowrap;
+            width: 48px;
+            min-width: 48px;
+            font-weight: 600;
+        }
+
+        /* ── Cell type styles ── */
+        .db-results-table .cell-null {
+            color: #d1d5db;
+            font-style: italic;
+            user-select: none;
+        }
+
+        .db-results-table .cell-bool-true {
+            color: #059669;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .db-results-table .cell-bool-false {
+            color: #dc2626;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .db-results-table .cell-number {
+            color: #1d4ed8;
+            font-weight: 500;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .db-results-table .cell-datetime {
+            color: #7c3aed;
+            white-space: nowrap;
+            font-size: 0.75rem;
+        }
+
+        .db-results-table .cell-uuid {
+            color: #9ca3af;
+            font-size: 0.6875rem;
+            letter-spacing: -0.02em;
+            cursor: help;
+            white-space: nowrap;
+        }
+
+        .db-results-table .cell-json {
+            display: inline-block;
+            background: #f3f4f6;
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.6875rem;
+            color: #6b7280;
+            max-width: 220px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: help;
+            vertical-align: middle;
+        }
+
+        .db-results-table .cell-string {
+            color: #374151;
+        }
+
+        .db-results-table .cell-long-string {
+            color: #374151;
+            font-size: 0.8125rem;
+            max-width: 260px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: block;
+            cursor: help;
+        }
+
+        .db-results-table .cell-password {
+            color: #d1d5db;
+            font-size: 0.6875rem;
+            letter-spacing: 0.12em;
+            white-space: nowrap;
+        }
+
+        /* ── Empty state ── */
+        .db-results-empty {
+            padding: 3rem 2rem;
+            text-align: center;
+            color: #9ca3af;
+        }
+
+        .db-results-empty i {
+            font-size: 2.5rem;
+            display: block;
+            color: #e5e7eb;
+            margin-bottom: 0.75rem;
+        }
+
+        .db-results-empty div {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+        }
+
+        .db-results-empty small {
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+
+        /* ── Message states (success / error) ── */
+        .db-results-message {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8125rem;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            line-height: 1.6;
+        }
+
+        .db-results-message.success {
+            color: #15803d;
+            background: #f0fdf4;
+            border-bottom: 2px solid #bbf7d0;
+        }
+
+        .db-results-message.error {
+            color: #dc2626;
+            background: #fef2f2;
+            border-bottom: 2px solid #fecaca;
+        }
+
+        .db-results-message i {
+            flex-shrink: 0;
+            margin-top: 2px;
+            font-size: 1rem;
+        }
+
+        /* ── Results footer — row count + timing bar ── */
+        .db-results-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.375rem 1rem;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            font-size: 0.6875rem;
+            color: #9ca3af;
+            font-family: 'JetBrains Mono', monospace;
+            white-space: nowrap;
+            /* Sticks to bottom of the scroll container */
+            position: sticky;
+            bottom: 0;
+            z-index: 2;
+        }
+
+        /* ── History ── */
+        .db-history {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .db-history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 1rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .db-history-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .db-history-item {
+            display: flex;
+            align-items: center;
+            padding: 0.375rem 1rem;
+            border-bottom: 1px solid #f9fafb;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: #4b5563;
+            cursor: pointer;
+            transition: background 0.1s ease;
+            gap: 0.5rem;
+        }
+
+        .db-history-item:hover {
+            background: #f0f9ff;
+        }
+
+        .db-history-item:last-child {
+            border-bottom: none;
+        }
+
+        .db-history-item .history-query {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
+
+        .db-history-item .history-time {
+            color: #9ca3af;
+            font-size: 0.625rem;
+            flex-shrink: 0;
+        }
+
+        .history-status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .history-status-dot.ok {
+            background: #22c55e;
+        }
+
+        .history-status-dot.err {
+            background: #ef4444;
+        }
+
+        .db-history-empty {
+            padding: 1.5rem;
+            text-align: center;
+            color: #d1d5db;
+            font-size: 0.8125rem;
+        }
+
+        /* ── User avatar chips in the main data tables ── */
+        .user-avatar-sm {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: white;
+            font-weight: 700;
+            font-size: 0.875rem;
+            flex-shrink: 0;
         }
 
-        .btn-edit {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border: none;
-            color: white;
-        }
-
-        .btn-delete {
-            background: linear-gradient(135deg, #ff6b6b 0%, #c92a2a 100%);
-            border: none;
-            color: white;
+        .user-avatar-green {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
         }
     </style>
 </head>
 
 <body>
     <!-- Super Admin Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark super-admin-navbar">
+    <nav class="navbar admin-navbar navbar-expand-lg" data-testid="super-admin-navbar">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="/">
-                <div class="brand-logo me-2">
+            <a class="navbar-brand" href="/" data-testid="brand-link">
+                <div class="brand-logo">
                     <i class="bi bi-shield-shaded"></i>
                 </div>
-                <div>
+                <div class="d-flex align-items-baseline">
                     <span class="brand-name">AYRA</span>
-                    <span class="text-light ms-2">Super Admin</span>
+                    <span class="ms-2">Super Admin</span>
                 </div>
             </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"
+                data-testid="navbar-toggle">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto me-3">
-                    <li class="nav-item">
-                        <span class="super-admin-badge">Super Admin</span>
+                    <li class="nav-item d-flex align-items-center">
+                        <span class="admin-badge" data-testid="role-badge">Super Admin</span>
                     </li>
                 </ul>
 
+                <span class="time-display" id="navTimeDisplay" data-testid="nav-time-display">
+                    <i class="bi bi-clock"></i>
+                    <span id="navTime"></span>
+                </span>
+
                 <div class="dropdown user-dropdown">
-                    <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <div class="user-avatar" style="background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);">
-                            {{ admin_name[0].upper() if admin_name else 'S' }}
-                        </div>
+                    <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                        data-testid="user-dropdown-toggle">
+                        <div class="user-avatar">{{ admin_name[0].upper() if admin_name else 'S' }}</div>
                         <span class="d-none d-md-inline">{{ admin_name or 'Super Admin' }}</span>
+                        <i class="bi bi-chevron-down"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li class="dropdown-header">
                             <strong>{{ admin_name }}</strong>
-                            <br><small class="text-muted">Super Administrator</small>
+                            <span class="text-muted">Super Administrator</span>
                         </li>
                         <li>
                             <hr class="dropdown-divider">
                         </li>
-                        <li><a class="dropdown-item text-danger" href="#" onclick="logout()">
-                                <i class="bi bi-box-arrow-right me-2"></i>Logout
-                            </a></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="#" onclick="logout()" data-testid="logout-btn">
+                                <i class="bi bi-box-arrow-right"></i> Logout
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -134,124 +852,144 @@
     </nav>
 
     <main class="main-content">
-        <div class="container py-4">
+        <div class="container-app">
+
             <!-- Welcome Section -->
-            <div class="welcome-section mb-4">
-                <div class="row align-items-center">
+            <section class="welcome-section fade-in" data-testid="welcome-section">
+                <div class="row align-items-center g-3">
                     <div class="col-md-8">
-                        <h1 class="welcome-title">Super Admin Dashboard 🛡️</h1>
-                        <p class="welcome-subtitle mb-0">Manage all administrators and users</p>
+                        <h1 class="welcome-title">Super Admin Dashboard</h1>
+                        <p class="welcome-subtitle">Manage all administrators, users, and documents</p>
                     </div>
                     <div class="col-md-4 text-md-end">
-                        <span id="currentDateTime"></span>
+                        <span id="currentDateTime" data-testid="current-date-time"></span>
                     </div>
                 </div>
-            </div>
+            </section>
 
             <!-- Stats Cards -->
-            <div class="row g-4 mb-4">
-                <div class="col-md-2 col-sm-6">
-                    <div class="stats-card super-admin">
-                        <div class="stats-icon" style="background: linear-gradient(135deg, #dc3545 0%, #6f42c1 100%);">
+            <section class="row g-3 mb-4" data-testid="stats-grid">
+                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
+                    <div class="compact-stats-card" data-testid="stat-super-admins">
+                        <div class="compact-stats-icon" style="background: var(--ink);">
                             <i class="bi bi-shield-shaded"></i>
                         </div>
-                        <div class="stats-value" id="totalSuperAdmins">1</div>
-                        <div class="stats-label">Super Admins</div>
+                        <div>
+                            <div class="compact-stats-value" id="totalSuperAdmins">1</div>
+                            <div class="compact-stats-label">Super Admins</div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-2 col-sm-6">
-                    <div class="stats-card">
-                        <div class="stats-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
+                    <div class="compact-stats-card" data-testid="stat-admins">
+                        <div class="compact-stats-icon" style="background: var(--ink-soft);">
                             <i class="bi bi-shield-lock"></i>
                         </div>
-                        <div class="stats-value" id="totalAdmins">0</div>
-                        <div class="stats-label">Admins</div>
+                        <div>
+                            <div class="compact-stats-value" id="totalAdmins">0</div>
+                            <div class="compact-stats-label">Admins</div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-2 col-sm-6">
-                    <div class="stats-card">
-                        <div class="stats-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
+                    <div class="compact-stats-card" data-testid="stat-users">
+                        <div class="compact-stats-icon" style="background: var(--ink-muted);">
                             <i class="bi bi-people"></i>
                         </div>
-                        <div class="stats-value" id="totalUsers">0</div>
-                        <div class="stats-label">Users</div>
+                        <div>
+                            <div class="compact-stats-value" id="totalUsers">0</div>
+                            <div class="compact-stats-label">Users</div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-2 col-sm-6">
-                    <div class="stats-card">
-                        <div class="stats-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
+                    <div class="compact-stats-card" data-testid="stat-documents">
+                        <div class="compact-stats-icon" style="background: #1d4ed8;">
                             <i class="bi bi-files"></i>
                         </div>
-                        <div class="stats-value" id="totalDocuments">0</div>
-                        <div class="stats-label">Documents</div>
+                        <div>
+                            <div class="compact-stats-value" id="totalDocuments">0</div>
+                            <div class="compact-stats-label">Documents</div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-2 col-sm-6">
-                    <div class="stats-card">
-                        <div class="stats-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
+                    <div class="compact-stats-card" data-testid="stat-pending">
+                        <div class="compact-stats-icon" style="background: #d97706;">
                             <i class="bi bi-hourglass-split"></i>
                         </div>
-                        <div class="stats-value" id="pendingDocs">0</div>
-                        <div class="stats-label">Pending</div>
+                        <div>
+                            <div class="compact-stats-value" id="pendingDocs">0</div>
+                            <div class="compact-stats-label">Pending</div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-2 col-sm-6">
-                    <div class="stats-card">
-                        <div class="stats-icon" style="background: linear-gradient(135deg, #002bec 0%, #764ba2 100%);">
+                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
+                    <div class="compact-stats-card" data-testid="stat-generated">
+                        <div class="compact-stats-icon" style="background: #16a34a;">
                             <i class="bi bi-file-earmark-check"></i>
                         </div>
-                        <div class="stats-value" id="generatedDocs">0</div>
-                        <div class="stats-label">Generated</div>
+                        <div>
+                            <div class="compact-stats-value" id="generatedDocs">0</div>
+                            <div class="compact-stats-label">Generated</div>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </section>
 
             <!-- Tabs -->
-            <div class="dashboard-tabs-container">
+            <section class="dashboard-tabs-container" data-testid="tabs-container">
                 <ul class="nav nav-tabs dashboard-tabs" id="superAdminTabs" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="overview-tab" data-bs-toggle="tab"
-                            data-bs-target="#overview" type="button" role="tab">
-                            <i class="bi bi-graph-up me-2"></i>Overview
+                            data-bs-target="#overview" type="button" role="tab" aria-controls="overview"
+                            aria-selected="true" data-testid="tab-overview">
+                            <i class="bi bi-graph-up"></i> Overview
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="admins-tab" data-bs-toggle="tab" data-bs-target="#admins"
-                            type="button" role="tab">
-                            <i class="bi bi-shield-lock me-2"></i>Admins
+                            type="button" role="tab" aria-controls="admins" aria-selected="false"
+                            data-testid="tab-admins">
+                            <i class="bi bi-shield-lock"></i> Admins
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users"
-                            type="button" role="tab">
-                            <i class="bi bi-people me-2"></i>Users
+                            type="button" role="tab" aria-controls="users" aria-selected="false"
+                            data-testid="tab-users">
+                            <i class="bi bi-people"></i> Users
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents"
-                            type="button" role="tab">
-                            <i class="bi bi-files me-2"></i>Documents
+                            type="button" role="tab" aria-controls="documents" aria-selected="false"
+                            data-testid="tab-documents">
+                            <i class="bi bi-files"></i> Documents
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="dbconsole-tab" data-bs-toggle="tab" data-bs-target="#dbconsole"
+                            type="button" role="tab" aria-controls="dbconsole" aria-selected="false"
+                            data-testid="tab-dbconsole">
+                            <i class="bi bi-terminal"></i> DB Console
                         </button>
                     </li>
                 </ul>
 
                 <div class="tab-content" id="superAdminTabsContent">
-                    <!-- Overview Tab -->
-                    <div class="tab-pane fade show active" id="overview" role="tabpanel">
-                        <div class="tab-content-card">
-                            <h5 class="section-title mb-4">
-                                <i class="bi bi-bar-chart-fill text-primary me-2"></i>System Overview
-                            </h5>
 
+                    <!-- Overview Tab -->
+                    <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+                        <div class="tab-content-card">
+                            <h5 class="section-title"><i class="bi bi-bar-chart-fill"></i> System Overview</h5>
                             <div class="row g-4">
-                                <div class="col-md-6">
+                                <div class="col-lg-6">
                                     <div class="card h-100">
-                                        <div class="card-header bg-primary text-white">
-                                            <i class="bi bi-shield-lock me-2"></i>Admin Activity
-                                        </div>
-                                        <div class="card-body">
+                                        <div class="card-header"><i class="bi bi-shield-lock"></i> Admin Activity</div>
+                                        <div class="card-body p-0">
                                             <div class="table-responsive">
-                                                <table class="table table-sm">
+                                                <table class="data-table">
                                                     <thead>
                                                         <tr>
                                                             <th>Admin</th>
@@ -259,21 +997,20 @@
                                                             <th>Last Login</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody id="adminActivityBody">
+                                                    <tbody id="adminActivityBody" data-testid="admin-activity-body">
                                                     </tbody>
                                                 </table>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-lg-6">
                                     <div class="card h-100">
-                                        <div class="card-header bg-success text-white">
-                                            <i class="bi bi-people me-2"></i>Top Users by Documents
+                                        <div class="card-header"><i class="bi bi-people"></i> Top Users by Documents
                                         </div>
-                                        <div class="card-body">
+                                        <div class="card-body p-0">
                                             <div class="table-responsive">
-                                                <table class="table table-sm">
+                                                <table class="data-table">
                                                     <thead>
                                                         <tr>
                                                             <th>User</th>
@@ -281,7 +1018,7 @@
                                                             <th>Generated</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody id="userActivityBody">
+                                                    <tbody id="userActivityBody" data-testid="user-activity-body">
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -293,24 +1030,22 @@
                     </div>
 
                     <!-- Admins Tab -->
-                    <div class="tab-pane fade" id="admins" role="tabpanel">
+                    <div class="tab-pane fade" id="admins" role="tabpanel" aria-labelledby="admins-tab">
                         <div class="tab-content-card">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h5 class="section-title mb-0">
-                                    <i class="bi bi-shield-lock text-primary me-2"></i>Admin Management
-                                </h5>
-                                <div>
-                                    <a href="/setup-admin" class="btn btn-create-admin text-white">
-                                        <i class="bi bi-person-plus me-1"></i>Add Admin
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                                <h5 class="section-title mb-0"><i class="bi bi-shield-lock"></i> Admin Management</h5>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <a href="/setup-admin" class="btn btn-secondary" data-testid="add-admin-btn">
+                                        <i class="bi bi-person-plus"></i> Add Admin
                                     </a>
-                                    <a href="/create-super-admin" class="btn btn-danger text-white ms-2">
-                                        <i class="bi bi-shield-plus me-1"></i>Add Super Admin
+                                    <a href="/create-super-admin" class="btn btn-primary"
+                                        data-testid="add-super-admin-btn">
+                                        <i class="bi bi-shield-plus"></i> Add Super Admin
                                     </a>
                                 </div>
                             </div>
-
                             <div class="table-responsive">
-                                <table class="table data-table" id="adminsTable">
+                                <table class="data-table" id="adminsTable">
                                     <thead>
                                         <tr>
                                             <th>Name</th>
@@ -322,36 +1057,31 @@
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="adminsTableBody">
-                                    </tbody>
+                                    <tbody id="adminsTableBody" data-testid="admins-table-body"></tbody>
                                 </table>
                             </div>
-
-                            <div class="empty-state d-none" id="adminsEmptyState">
+                            <div class="empty-state d-none" id="adminsEmptyState" data-testid="admins-empty-state">
                                 <i class="bi bi-shield-lock"></i>
                                 <h5>No admins found</h5>
                                 <p>Create your first admin to get started</p>
-                                <a href="/setup-admin" class="btn btn-primary">
-                                    <i class="bi bi-person-plus me-1"></i>Add Admin
-                                </a>
+                                <a href="/setup-admin" class="btn btn-primary mt-3"><i class="bi bi-person-plus"></i>
+                                    Add Admin</a>
                             </div>
                         </div>
                     </div>
 
                     <!-- Users Tab -->
-                    <div class="tab-pane fade" id="users" role="tabpanel">
+                    <div class="tab-pane fade" id="users" role="tabpanel" aria-labelledby="users-tab">
                         <div class="tab-content-card">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h5 class="section-title mb-0">
-                                    <i class="bi bi-people text-success me-2"></i>User Management
-                                </h5>
-                                <button type="button" class="btn btn-success" onclick="showAddUserModal()">
-                                    <i class="bi bi-person-plus me-1"></i>Add User
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                                <h5 class="section-title mb-0"><i class="bi bi-people"></i> User Management</h5>
+                                <button type="button" class="btn btn-primary" onclick="showAddUserModal()"
+                                    data-testid="add-user-btn">
+                                    <i class="bi bi-person-plus"></i> Add User
                                 </button>
                             </div>
-
                             <div class="table-responsive">
-                                <table class="table data-table" id="usersTable">
+                                <table class="data-table" id="usersTable">
                                     <thead>
                                         <tr>
                                             <th>Name</th>
@@ -363,12 +1093,10 @@
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="usersTableBody">
-                                    </tbody>
+                                    <tbody id="usersTableBody" data-testid="users-table-body"></tbody>
                                 </table>
                             </div>
-
-                            <div class="empty-state d-none" id="usersEmptyState">
+                            <div class="empty-state d-none" id="usersEmptyState" data-testid="users-empty-state">
                                 <i class="bi bi-people"></i>
                                 <h5>No users found</h5>
                                 <p>Add users to get started</p>
@@ -377,28 +1105,26 @@
                     </div>
 
                     <!-- Documents Tab -->
-                    <div class="tab-pane fade" id="documents" role="tabpanel">
+                    <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
                         <div class="tab-content-card">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h5 class="section-title mb-0">
-                                    <i class="bi bi-files text-info me-2"></i>All Documents
-                                </h5>
-                                <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-outline-primary btn-sm active"
-                                        onclick="filterDocs('all')">All</button>
-                                    <button type="button" class="btn btn-outline-warning btn-sm"
-                                        onclick="filterDocs('draft')">Drafts</button>
-                                    <button type="button" class="btn btn-outline-info btn-sm"
-                                        onclick="filterDocs('pending')">Pending</button>
-                                    <button type="button" class="btn btn-outline-success btn-sm"
-                                        onclick="filterDocs('approved')">Approved</button>
-                                    <button type="button" class="btn btn-outline-primary btn-sm"
-                                        onclick="filterDocs('generated')">Generated</button>
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                                <h5 class="section-title mb-0"><i class="bi bi-files"></i> All Documents</h5>
+                                <div class="d-flex gap-2 flex-wrap" role="group" aria-label="Document filters">
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="filterDocs('all')"
+                                        data-testid="filter-all">All</button>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="filterDocs('draft')"
+                                        data-testid="filter-draft">Drafts</button>
+                                    <button type="button" class="btn btn-sm btn-secondary"
+                                        onclick="filterDocs('pending')" data-testid="filter-pending">Pending</button>
+                                    <button type="button" class="btn btn-sm btn-secondary"
+                                        onclick="filterDocs('approved')" data-testid="filter-approved">Approved</button>
+                                    <button type="button" class="btn btn-sm btn-secondary"
+                                        onclick="filterDocs('generated')"
+                                        data-testid="filter-generated">Generated</button>
                                 </div>
                             </div>
-
                             <div class="table-responsive">
-                                <table class="table data-table" id="docsTable">
+                                <table class="data-table" id="docsTable">
                                     <thead>
                                         <tr>
                                             <th>User</th>
@@ -408,61 +1134,239 @@
                                             <th>Modified</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="docsTableBody">
-                                    </tbody>
+                                    <tbody id="docsTableBody" data-testid="docs-table-body"></tbody>
                                 </table>
                             </div>
-
-                            <div class="empty-state d-none" id="docsEmptyState">
+                            <div class="empty-state d-none" id="docsEmptyState" data-testid="docs-empty-state">
                                 <i class="bi bi-files"></i>
                                 <h5>No documents found</h5>
+                                <p>Documents will appear here as users create them</p>
                             </div>
                         </div>
                     </div>
+
+                    <!-- DB Console Tab -->
+                    <div class="tab-pane fade" id="dbconsole" role="tabpanel" aria-labelledby="dbconsole-tab">
+                        <div class="tab-content-card">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                                <h5 class="section-title mb-0"><i class="bi bi-terminal"></i> Database Console</h5>
+                                <span class="label-caps" data-testid="db-engine-label">
+                                    <i class="bi bi-hdd-network"></i>
+                                    <span id="dbEngineName">connecting…</span>
+                                </span>
+                            </div>
+
+                            <div class="db-console-warning mb-3" data-testid="db-console-warning">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                                <div>
+                                    <strong>Super Admin only.</strong>
+                                    Queries run against the live database. Destructive statements
+                                    (<code>DROP</code>, <code>DELETE</code>, <code>TRUNCATE</code>, <code>ALTER</code>)
+                                    require <em>Write</em> mode and an explicit confirmation.
+                                </div>
+                            </div>
+
+                            <div class="db-console-wrapper">
+                                <!-- Sidebar -->
+                                <aside class="db-sidebar" data-testid="db-sidebar">
+                                    <h6><i class="bi bi-table"></i> Tables</h6>
+                                    <div id="dbTablesList" data-testid="db-tables-list">
+                                        <div class="db-table-item"
+                                            data-query="SELECT * FROM users ORDER BY created_at DESC LIMIT 50;">
+                                            <span>users</span>
+                                            <span class="row-count" id="rc-users">—</span>
+                                        </div>
+                                        <div class="db-table-item"
+                                            data-query="SELECT * FROM drafts ORDER BY modified_at DESC LIMIT 50;">
+                                            <span>drafts</span>
+                                            <span class="row-count" id="rc-drafts">—</span>
+                                        </div>
+                                        <div class="db-table-item"
+                                            data-query="SELECT * FROM phone_tracking ORDER BY id DESC LIMIT 50;">
+                                            <span>phone_tracking</span>
+                                            <span class="row-count" id="rc-phone-tracking">—</span>
+                                        </div>
+                                    </div>
+
+                                    <h6 class="mt-4"><i class="bi bi-bookmark-star"></i> Snippets</h6>
+                                    <button type="button" class="db-snippet"
+                                        data-query="SELECT role, COUNT(*) AS total FROM users GROUP BY role;">
+                                        <i class="bi bi-people"></i>Users by role
+                                    </button>
+                                    <button type="button" class="db-snippet"
+                                        data-query="SELECT status, COUNT(*) AS total FROM drafts GROUP BY status;">
+                                        <i class="bi bi-file-earmark-text"></i>Drafts by status
+                                    </button>
+                                    <button type="button" class="db-snippet"
+                                        data-query="SELECT id, name, email, role, is_active, last_login FROM users WHERE role IN ('admin','super_admin') ORDER BY role, name;">
+                                        <i class="bi bi-shield-lock"></i>All admins
+                                    </button>
+                                    <button type="button" class="db-snippet"
+                                        data-query="SELECT u.name AS user_name, COUNT(d.id) AS total_docs FROM users u LEFT JOIN drafts d ON d.user_id=u.id WHERE u.role='user' GROUP BY u.id, u.name ORDER BY total_docs DESC LIMIT 10;">
+                                        <i class="bi bi-trophy"></i>Top users by docs
+                                    </button>
+                                    <button type="button" class="db-snippet"
+                                        data-query="SELECT id, user_id, template_type, status, modified_at FROM drafts WHERE status='pending' ORDER BY modified_at DESC;">
+                                        <i class="bi bi-hourglass-split"></i>Pending drafts
+                                    </button>
+                                    <button type="button" class="db-snippet"
+                                        data-query="SELECT id, user_id, template_type, generated_at FROM drafts WHERE status='generated' ORDER BY generated_at DESC LIMIT 20;">
+                                        <i class="bi bi-file-earmark-check"></i>Recently generated
+                                    </button>
+                                    <button type="button" class="db-snippet"
+                                        data-query="SELECT COUNT(*) AS total_users, SUM(CASE WHEN is_active THEN 1 ELSE 0 END) AS active_users FROM users;">
+                                        <i class="bi bi-bar-chart"></i>User totals
+                                    </button>
+                                </aside>
+
+                                <!-- Main -->
+                                <div class="db-console-main">
+                                    <!-- Editor -->
+                                    <div class="db-editor">
+                                        <div class="db-editor-header">
+                                            <span class="db-prompt">
+                                                <span>super_admin@ayra:</span>
+                                                <span class="db-prompt-path">~/db</span>
+                                                <span>$</span>
+                                            </span>
+                                            <span class="db-shortcut-hint">
+                                                <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to run
+                                            </span>
+                                        </div>
+                                        <textarea id="dbQueryInput" class="db-query-input" spellcheck="false"
+                                            autocomplete="off"
+                                            placeholder="-- Enter your SQL query&#10;SELECT * FROM users LIMIT 10;"
+                                            data-testid="db-query-input"></textarea>
+                                        <div class="db-editor-footer">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <select id="dbModeSelect" class="db-mode-select"
+                                                    data-testid="db-mode-select" aria-label="Query mode">
+                                                    <option value="read" selected>READ ONLY</option>
+                                                    <option value="write">WRITE (danger)</option>
+                                                </select>
+                                                <select id="dbLimitSelect" class="db-mode-select"
+                                                    data-testid="db-limit-select" aria-label="Row limit">
+                                                    <option value="50">limit 50</option>
+                                                    <option value="100" selected>limit 100</option>
+                                                    <option value="500">limit 500</option>
+                                                    <option value="0">no limit</option>
+                                                </select>
+                                            </div>
+                                            <div class="db-action-group">
+                                                <button type="button" class="db-btn db-btn-ghost" id="dbFormatBtn"
+                                                    data-testid="db-format-btn">
+                                                    <i class="bi bi-magic"></i> Format
+                                                </button>
+                                                <button type="button" class="db-btn db-btn-ghost" id="dbClearBtn"
+                                                    data-testid="db-clear-btn">
+                                                    <i class="bi bi-eraser"></i> Clear
+                                                </button>
+                                                <button type="button" class="db-btn db-btn-ghost" id="dbExportBtn"
+                                                    data-testid="db-export-btn" disabled>
+                                                    <i class="bi bi-download"></i> CSV
+                                                </button>
+                                                <button type="button" class="db-btn db-btn-run" id="dbRunBtn"
+                                                    data-testid="db-run-btn">
+                                                    <i class="bi bi-play-fill"></i> Run
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Results -->
+                                    <div class="db-results" data-testid="db-results">
+                                        <div class="db-results-header">
+                                            <span class="db-results-title"><i class="bi bi-card-list"></i> Result</span>
+                                            <div class="db-results-meta">
+                                                <span class="meta-chip" id="dbStatusChip"
+                                                    data-testid="db-status-chip">idle</span>
+                                                <span id="dbRowCountChip">— rows</span>
+                                                <span id="dbTimeChip">— ms</span>
+                                            </div>
+                                        </div>
+                                        <div class="db-results-body" id="dbResultsBody" data-testid="db-results-body">
+                                            <div class="db-results-empty">
+                                                <i class="bi bi-terminal"></i>
+                                                <div>Run a query to see results here.</div>
+                                                <small class="text-muted">Click a table or snippet on the left to get
+                                                    started.</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- History -->
+                                    <div class="db-history">
+                                        <div class="db-history-header">
+                                            <span><i class="bi bi-clock-history"></i> History</span>
+                                            <button type="button" class="db-btn db-btn-ghost" id="dbHistoryClearBtn"
+                                                style="background:#fff;color:#6b7280;border-color:#e5e7eb;font-size:0.75rem;padding:0.25rem 0.5rem;"
+                                                data-testid="db-history-clear-btn">
+                                                <i class="bi bi-trash"></i> Clear
+                                            </button>
+                                        </div>
+                                        <div class="db-history-list" id="dbHistoryList" data-testid="db-history-list">
+                                            <div class="db-history-empty">No queries yet in this session.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-            </div>
+            </section>
+
         </div>
     </main>
 
     <footer class="footer">
         <div class="container">
             <span class="fw-bold"><i class="bi bi-shield-shaded me-2"></i>AYRA Services Super Admin</span>
-            <span class="ms-3 small">&copy; 2026 - Super Administration Portal</span>
+            <span class="small">&copy; 2026 — Super Administration Portal</span>
         </div>
     </footer>
 
     <!-- Add User Modal -->
-    <div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Add New User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="addUserModalLabel"><i class="bi bi-person-plus me-2"></i>Add New User
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addUserForm">
+                    <form id="addUserForm" data-testid="add-user-form">
                         <div class="mb-3">
-                            <label class="form-label">Full Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="newUserName" required>
+                            <label class="form-label" for="newUserName">Full Name <span
+                                    class="required-asterisk">*</span></label>
+                            <input type="text" class="form-control" id="newUserName" required
+                                data-testid="new-user-name">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="newUserEmail" required>
+                            <label class="form-label" for="newUserEmail">Email <span
+                                    class="required-asterisk">*</span></label>
+                            <input type="email" class="form-control" id="newUserEmail" required
+                                data-testid="new-user-email">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Phone</label>
-                            <input type="tel" class="form-control" id="newUserPhone" maxlength="10">
+                            <label class="form-label" for="newUserPhone">Phone</label>
+                            <input type="tel" class="form-control" id="newUserPhone" maxlength="10"
+                                data-testid="new-user-phone">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Password</label>
-                            <input type="text" class="form-control" id="newUserPassword" value="Ayraservices@123">
+                            <label class="form-label" for="newUserPassword">Password</label>
+                            <input type="text" class="form-control" id="newUserPassword" value="Ayraservices@123"
+                                data-testid="new-user-password">
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-success" onclick="createUser()">
-                        <i class="bi bi-check-lg me-1"></i>Create User
+                    <button type="button" class="btn btn-primary" onclick="createUser()"
+                        data-testid="create-user-submit">
+                        <i class="bi bi-check-lg"></i> Create User
                     </button>
                 </div>
             </div>
@@ -470,37 +1374,43 @@
     </div>
 
     <!-- Edit Admin Modal -->
-    <div class="modal fade" id="editAdminModal" tabindex="-1">
+    <div class="modal fade" id="editAdminModal" tabindex="-1" aria-labelledby="editAdminModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Admin</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="editAdminModalLabel"><i class="bi bi-pencil me-2"></i>Edit Admin</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" id="editAdminId">
-                    <div class="mb-3">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" class="form-control" id="editAdminName">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" id="editAdminEmail">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Phone</label>
-                        <input type="tel" class="form-control" id="editAdminPhone" maxlength="10">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">New Password <small class="text-muted">(leave blank to
-                                keep)</small></label>
-                        <input type="password" class="form-control" id="editAdminPassword">
-                    </div>
+                    <form id="editAdminForm" data-testid="edit-admin-form">
+                        <input type="hidden" id="editAdminId">
+                        <div class="mb-3">
+                            <label class="form-label" for="editAdminName">Full Name</label>
+                            <input type="text" class="form-control" id="editAdminName" data-testid="edit-admin-name">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="editAdminEmail">Email</label>
+                            <input type="email" class="form-control" id="editAdminEmail" data-testid="edit-admin-email">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="editAdminPhone">Phone</label>
+                            <input type="tel" class="form-control" id="editAdminPhone" maxlength="10"
+                                data-testid="edit-admin-phone">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="editAdminPassword">New Password <small
+                                    class="text-muted">(leave blank to keep)</small></label>
+                            <input type="password" class="form-control" id="editAdminPassword"
+                                data-testid="edit-admin-password">
+                        </div>
+                    </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="updateAdmin()">
-                        <i class="bi bi-check-lg me-1"></i>Update
+                    <button type="button" class="btn btn-primary" onclick="updateAdmin()"
+                        data-testid="update-admin-submit">
+                        <i class="bi bi-check-lg"></i> Update
                     </button>
                 </div>
             </div>
@@ -508,37 +1418,43 @@
     </div>
 
     <!-- Edit User Modal -->
-    <div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="editUserModalLabel"><i class="bi bi-pencil me-2"></i>Edit User</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" id="editUserId">
-                    <div class="mb-3">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" class="form-control" id="editUserName">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" id="editUserEmail">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Phone</label>
-                        <input type="tel" class="form-control" id="editUserPhone" maxlength="10">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">New Password <small class="text-muted">(leave blank to
-                                keep)</small></label>
-                        <input type="password" class="form-control" id="editUserPassword">
-                    </div>
+                    <form id="editUserForm" data-testid="edit-user-form">
+                        <input type="hidden" id="editUserId">
+                        <div class="mb-3">
+                            <label class="form-label" for="editUserName">Full Name</label>
+                            <input type="text" class="form-control" id="editUserName" data-testid="edit-user-name">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="editUserEmail">Email</label>
+                            <input type="email" class="form-control" id="editUserEmail" data-testid="edit-user-email">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="editUserPhone">Phone</label>
+                            <input type="tel" class="form-control" id="editUserPhone" maxlength="10"
+                                data-testid="edit-user-phone">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="editUserPassword">New Password <small
+                                    class="text-muted">(leave blank to keep)</small></label>
+                            <input type="password" class="form-control" id="editUserPassword"
+                                data-testid="edit-user-password">
+                        </div>
+                    </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="updateUser()">
-                        <i class="bi bi-check-lg me-1"></i>Update
+                    <button type="button" class="btn btn-primary" onclick="updateUser()"
+                        data-testid="update-user-submit">
+                        <i class="bi bi-check-lg"></i> Update
                     </button>
                 </div>
             </div>
@@ -547,11 +1463,11 @@
 
     <!-- Toast -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
-        <div id="toast" class="toast" role="alert">
+        <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="toast-header">
-                <i id="toastIcon" class="bi me-2"></i>
+                <i id="toastIcon" class="bi"></i>
                 <strong id="toastTitle" class="me-auto"></strong>
-                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
             <div id="toastBody" class="toast-body"></div>
         </div>
