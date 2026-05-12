@@ -1034,8 +1034,7 @@ function showPreview() {
 
     // Validate name fields
     if (!validateAllNameFields()) {
-        showToast('warning', 'Invalid Names', 
-            'Name fields cannot contain numbers or special characters.');
+        showToast('warning', 'Invalid Input', 'Name fields cannot contain numbers.');
         return;
     }
     
@@ -1419,7 +1418,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 
-
 // ==================== NAME FIELD VALIDATION ====================
 
 /**
@@ -1427,23 +1425,17 @@ document.addEventListener('DOMContentLoaded', function () {
  * Prevents numbers and most special characters
  */
 function initNameFieldValidation() {
-    // Define selectors for all name fields across all templates
     const nameFieldSelectors = [
-        // Major template
         'input[name="old_name"]',
         'input[name="new_name"]',
         'input[name="fatherspouse_name"]',
         'input[name="father_name"]',
         'input[name="spouse_name"]',
-        'input[name="witness_name1"]',
-        'input[name="witness_name2"]',
-        
-        // Minor template
         'input[name="fathermother_name"]',
         'input[name="guardian_father_name"]',
         'input[name="guardian_spouse_name"]',
-        
-        // Specific IDs
+        'input[name="witness_name1"]',
+        'input[name="witness_name2"]',
         '#major_old_name',
         '#major_fatherspouse_name',
         '#major_father_name',
@@ -1459,7 +1451,6 @@ function initNameFieldValidation() {
         '#religion_spouse_name',
     ];
 
-    // Use a Set to avoid duplicate event listeners
     const processedInputs = new Set();
 
     nameFieldSelectors.forEach(selector => {
@@ -1471,7 +1462,6 @@ function initNameFieldValidation() {
         });
     });
 
-    // Also attach to dynamically added alias fields via MutationObserver
     observeAliasContainers();
 }
 
@@ -1479,20 +1469,10 @@ function initNameFieldValidation() {
  * Attaches name validation events to a specific input element
  */
 function attachNameValidation(input) {
-    // Mark this input as a name field
     input.setAttribute('data-name-field', 'true');
-
-    // Prevent invalid characters on keydown
     input.addEventListener('keydown', handleNameKeydown);
-
-    // Clean on input (handles paste, autofill, etc.)
     input.addEventListener('input', handleNameInput);
-
-    // Clean on paste
     input.addEventListener('paste', handleNamePaste);
-
-    // Visual feedback on invalid key
-    input.addEventListener('keypress', handleNameKeypress);
 }
 
 /**
@@ -1507,49 +1487,13 @@ function handleNameKeydown(e) {
         'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'
     ];
 
-    // Allow control combinations (Ctrl+C, Ctrl+V, Ctrl+A, etc.)
     if (e.ctrlKey || e.metaKey) return;
-
-    // Allow special navigation/editing keys
     if (allowedKeys.includes(e.key)) return;
-
-    // Allow letters (a-z, A-Z)
     if (/^[a-zA-Z]$/.test(e.key)) return;
+    if (e.key === ' ' || e.key === '-' || e.key === "'" || e.key === '.') return;
 
-    // Allow space
-    if (e.key === ' ') return;
-
-    // Allow hyphen (for compound names like Mary-Jane)
-    if (e.key === '-') return;
-
-    // Allow apostrophe (for names like O'Brien)
-    if (e.key === "'") return;
-
-    // Allow dot (for abbreviated names like A. Kumar)
-    if (e.key === '.') return;
-
-    // Block everything else (numbers, symbols, etc.)
     e.preventDefault();
     showNameFieldError(e.target);
-}
-
-/**
- * Handles keypress for additional visual feedback
- */
-function handleNameKeypress(e) {
-    // Numbers: keyCodes 48-57 (0-9)
-    if (e.charCode >= 48 && e.charCode <= 57) {
-        e.preventDefault();
-        showNameFieldError(e.target);
-        return;
-    }
-
-    // Allow only valid name characters
-    const char = String.fromCharCode(e.charCode);
-    if (!/^[a-zA-Z\s\-'.]$/.test(char) && e.charCode !== 0) {
-        e.preventDefault();
-        showNameFieldError(e.target);
-    }
 }
 
 /**
@@ -1560,24 +1504,21 @@ function handleNameInput(e) {
     const originalValue = input.value;
     const cursorPos = input.selectionStart;
 
-    // Remove all invalid characters (keep letters, spaces, hyphens, apostrophes, dots)
     const cleanedValue = originalValue.replace(/[^a-zA-Z\s\-'.]/g, '');
 
     if (cleanedValue !== originalValue) {
-        // Calculate new cursor position
         const diff = originalValue.length - cleanedValue.length;
         const newCursorPos = Math.max(0, cursorPos - diff);
-
         input.value = cleanedValue;
 
-        // Restore cursor position
         try {
             input.setSelectionRange(newCursorPos, newCursorPos);
-        } catch (err) {
-            // Some input types don't support setSelectionRange
-        }
+        } catch (err) {}
 
         showNameFieldError(input);
+    } else {
+        // Clear error if input is now valid
+        clearNameFieldError(input);
     }
 }
 
@@ -1588,11 +1529,8 @@ function handleNamePaste(e) {
     e.preventDefault();
 
     const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-
-    // Clean the pasted text
     const cleanedText = pastedText.replace(/[^a-zA-Z\s\-'.]/g, '');
 
-    // Insert cleaned text at cursor position
     const input = e.target;
     const start = input.selectionStart;
     const end = input.selectionEnd;
@@ -1600,79 +1538,65 @@ function handleNamePaste(e) {
 
     input.value = currentValue.substring(0, start) + cleanedText + currentValue.substring(end);
 
-    // Move cursor to end of inserted text
     const newPos = start + cleanedText.length;
     try {
         input.setSelectionRange(newPos, newPos);
-    } catch (err) {
-        // Handle silently
-    }
+    } catch (err) {}
 
-    // Trigger input event for other listeners (uppercase, alias preview, etc.)
     input.dispatchEvent(new Event('input', { bubbles: true }));
 
-    // Show info if content was stripped
     if (cleanedText !== pastedText) {
-        showNameFieldError(input, 'Numbers/symbols removed from paste');
+        showNameFieldError(input, 'Numbers & symbols removed');
     }
 }
 
 /**
- * Shows visual error feedback on the field
+ * Shows a single error message below the field - no duplicates
  */
 function showNameFieldError(input, message = 'Only letters allowed') {
-    // Remove existing error tooltip
-    const existingTooltip = input.parentElement.querySelector('.name-field-error');
-    if (existingTooltip) {
-        existingTooltip.remove();
+    // Find the wrapper - could be col-md-4, col-12, or the field's parent
+    const wrapper = input.closest('.col-md-4, .col-md-6, .col-12') || input.parentElement;
+
+    // Check if error already exists - don't add another
+    let errorEl = wrapper.querySelector('.name-field-error');
+
+    if (!errorEl) {
+        errorEl = document.createElement('div');
+        errorEl.className = 'name-field-error';
+        wrapper.appendChild(errorEl);
     }
 
-    // Add shake animation
+    // Update message
+    errorEl.innerHTML = `<i class="bi bi-exclamation-circle me-1"></i>${message}`;
+
+    // Clear any existing timer on this element
+    if (errorEl._hideTimer) {
+        clearTimeout(errorEl._hideTimer);
+    }
+
+    // Shake the input
     input.classList.add('name-field-shake');
     setTimeout(() => input.classList.remove('name-field-shake'), 400);
 
-    // Show brief error tooltip
-    const tooltip = document.createElement('div');
-    tooltip.className = 'name-field-error';
-    tooltip.innerHTML = `<i class="bi bi-exclamation-circle me-1"></i>${message}`;
-
-    // Insert after input or its parent group
-    const insertAfter = input.closest('.input-group') || input;
-    insertAfter.insertAdjacentElement('afterend', tooltip);
-
-    // Auto-remove after 2 seconds
-    setTimeout(() => {
-        if (tooltip.parentElement) {
-            tooltip.style.opacity = '0';
-            setTimeout(() => tooltip.remove(), 300);
+    // Auto-hide after 2.5 seconds
+    errorEl._hideTimer = setTimeout(() => {
+        if (errorEl.parentElement) {
+            errorEl.classList.add('name-field-error--hiding');
+            setTimeout(() => errorEl.remove(), 300);
         }
-    }, 2000);
+    }, 2500);
 }
 
 /**
- * Validates a name value and returns result
+ * Clears error message for a specific input
  */
-function validateNameValue(value, fieldLabel = 'Name') {
-    if (!value || value.trim() === '') {
-        return { valid: false, message: `${fieldLabel} is required` };
+function clearNameFieldError(input) {
+    const wrapper = input.closest('.col-md-4, .col-md-6, .col-12') || input.parentElement;
+    const errorEl = wrapper.querySelector('.name-field-error');
+    if (errorEl) {
+        if (errorEl._hideTimer) clearTimeout(errorEl._hideTimer);
+        errorEl.remove();
     }
-
-    // Check for numbers
-    if (/\d/.test(value)) {
-        return { valid: false, message: `${fieldLabel} cannot contain numbers` };
-    }
-
-    // Check for invalid special characters
-    if (/[^a-zA-Z\s\-'.]/.test(value)) {
-        return { valid: false, message: `${fieldLabel} contains invalid characters` };
-    }
-
-    // Check minimum length (at least 2 characters)
-    if (value.trim().length < 2) {
-        return { valid: false, message: `${fieldLabel} is too short` };
-    }
-
-    return { valid: true, message: '' };
 }
 
 /**
@@ -1688,16 +1612,11 @@ function observeAliasContainers() {
             mutations.forEach(mutation => {
                 mutation.addedNodes.forEach(node => {
                     if (node.nodeType === Node.ELEMENT_NODE) {
-                        // Find alias inputs within the added node
                         const aliasInputs = node.querySelectorAll
                             ? node.querySelectorAll('input.alias-input')
                             : [];
+                        aliasInputs.forEach(input => attachNameValidation(input));
 
-                        aliasInputs.forEach(input => {
-                            attachNameValidation(input);
-                        });
-
-                        // If the added node itself is an alias input
                         if (node.classList && node.classList.contains('alias-input')) {
                             attachNameValidation(node);
                         }
@@ -1712,41 +1631,29 @@ function observeAliasContainers() {
 
 /**
  * Validates all name fields before form submission
- * Returns true if all valid, false otherwise
  */
 function validateAllNameFields() {
     const activeSection = document.querySelector('.template-form-section.active');
     if (!activeSection) return true;
 
-    const nameInputs = activeSection.querySelectorAll('[data-name-field="true"]');
     const witnessSection = document.getElementById('commonSections');
-    const witnessNameInputs = witnessSection
-        ? witnessSection.querySelectorAll('[data-name-field="true"]')
-        : [];
+    const nameInputs = [
+        ...activeSection.querySelectorAll('[data-name-field="true"]'),
+        ...(witnessSection ? witnessSection.querySelectorAll('[data-name-field="true"]') : [])
+    ];
 
-    const allNameInputs = [...nameInputs, ...witnessNameInputs];
     let allValid = true;
     let firstInvalidInput = null;
 
-    allNameInputs.forEach(input => {
-        // Only validate visible, required fields
-        if (input.offsetParent !== null && input.getAttribute('data-required') === 'true') {
-            const label = input.closest('.col-md-4, .col-12')
-                ?.querySelector('label')?.textContent?.trim()
-                ?.replace('*', '').trim() || 'Name';
+    nameInputs.forEach(input => {
+        if (input.offsetParent !== null && input.value.trim() !== '') {
+            const hasNumbers = /\d/.test(input.value);
+            const hasInvalidChars = /[^a-zA-Z\s\-'.]/.test(input.value);
 
-            const result = validateNameValue(input.value, label);
-
-            if (!result.valid && input.value.trim() !== '') {
-                // Only show error for name-format issues (not empty field errors)
-                if (/\d/.test(input.value) || /[^a-zA-Z\s\-'.]/.test(input.value)) {
-                    input.classList.add('is-invalid');
-                    showNameFieldError(input, result.message);
-                    allValid = false;
-                    if (!firstInvalidInput) firstInvalidInput = input;
-                }
-            } else {
-                input.classList.remove('is-invalid');
+            if (hasNumbers || hasInvalidChars) {
+                showNameFieldError(input, 'Only letters allowed');
+                allValid = false;
+                if (!firstInvalidInput) firstInvalidInput = input;
             }
         }
     });
