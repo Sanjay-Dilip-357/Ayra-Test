@@ -247,7 +247,7 @@ function dbFormatSQL(sql) {
         f = f.replace(new RegExp(`\\b${kw}\\b`, 'gi'), kw);
     });
     ['FROM', 'WHERE', 'JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN',
-     'GROUP BY', 'ORDER BY', 'HAVING', 'LIMIT', 'OFFSET', 'ON', 'AND', 'OR'
+        'GROUP BY', 'ORDER BY', 'HAVING', 'LIMIT', 'OFFSET', 'ON', 'AND', 'OR'
     ].forEach(c => {
         f = f.replace(new RegExp(`\\s+${c}\\b`, 'g'), `\n${c}`);
     });
@@ -404,6 +404,122 @@ function dbInitConsole() {
 }
 
 
+// ==================== TABLE SORT ====================
+const tableSort = {
+    admins: { field: null, dir: 'asc' },
+    users: { field: null, dir: 'asc' },
+    docs: { field: null, dir: 'asc' }
+};
+
+function setTableSort(table, field) {
+    const current = tableSort[table];
+    if (!current) return;
+
+    if (current.field === field) {
+        current.dir = current.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+        current.field = field;
+        current.dir = 'asc';
+    }
+
+    updateSortIndicators();
+
+    if (table === 'admins') renderAdmins();
+    else if (table === 'users') renderUsers();
+    else if (table === 'docs') renderDocuments();
+}
+
+function getSortableValue(table, item, field) {
+    let value = null;
+    let type = 'string';
+
+    if (table === 'admins') {
+        if (field === 'status') {
+            value = item.is_active ? 1 : 0;
+            type = 'number';
+        } else if (field === 'created_at' || field === 'last_login') {
+            value = item[field];
+            type = 'date';
+        } else {
+            value = item[field];
+        }
+    } else if (table === 'users') {
+        if (field === 'last_login') {
+            value = item.last_login;
+            type = 'date';
+        } else {
+            value = item[field];
+        }
+    } else if (table === 'docs') {
+        if (field === 'modified_at') {
+            value = item.modified_at;
+            type = 'date';
+        } else {
+            value = item[field];
+        }
+    }
+
+    return { value, type };
+}
+
+function normalizeSortValue(value, type) {
+    if (value === null || value === undefined || value === '') return null;
+
+    if (type === 'number') return Number(value);
+
+    if (type === 'date') {
+        const t = new Date(value).getTime();
+        return isNaN(t) ? null : t;
+    }
+
+    return String(value).toLowerCase().trim();
+}
+
+function compareSortValues(a, b, dir) {
+    if (a === null && b === null) return 0;
+    if (a === null) return 1;
+    if (b === null) return -1;
+
+    if (a < b) return dir === 'asc' ? -1 : 1;
+    if (a > b) return dir === 'asc' ? 1 : -1;
+    return 0;
+}
+
+function getSortedData(list, table) {
+    const state = tableSort[table];
+    if (!state || !state.field) return [...list];
+
+    return [...list].sort((a, b) => {
+        const aMeta = getSortableValue(table, a, state.field);
+        const bMeta = getSortableValue(table, b, state.field);
+
+        const av = normalizeSortValue(aMeta.value, aMeta.type);
+        const bv = normalizeSortValue(bMeta.value, bMeta.type);
+
+        return compareSortValues(av, bv, state.dir);
+    });
+}
+
+function updateSortIndicators() {
+    document.querySelectorAll('.table-sort-btn').forEach(btn => {
+        const table = btn.dataset.table;
+        const field = btn.dataset.field;
+        const arrow = btn.querySelector('.sort-arrow');
+        const state = tableSort[table];
+
+        btn.classList.remove('active');
+
+        if (!arrow) return;
+
+        if (state && state.field === field) {
+            btn.classList.add('active');
+            arrow.textContent = state.dir === 'asc' ? '↑' : '↓';
+        } else {
+            arrow.textContent = '↕';
+        }
+    });
+}
+
 // ==================== INITIALIZATION ====================
 document.addEventListener('DOMContentLoaded', function () {
     addUserModal = new bootstrap.Modal(document.getElementById('addUserModal'));
@@ -414,6 +530,8 @@ document.addEventListener('DOMContentLoaded', function () {
     loadAdmins();
     loadUsers();
     loadDocuments();
+
+    updateSortIndicators();
 
     updateDateTime();
     setInterval(updateDateTime, 60000);
@@ -429,6 +547,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     dbInitConsole();
+    initSortBars();
 });
 
 
@@ -507,6 +626,7 @@ function renderAdmins() {
     const tbody = document.getElementById('adminsTableBody');
     const empty = document.getElementById('adminsEmptyState');
     const table = document.getElementById('adminsTable');
+    const admins = getSortedData(allAdmins, 'admins');
     if (!tbody) return;
     if (!allAdmins.length) {
         tbody.innerHTML = '';
@@ -516,7 +636,7 @@ function renderAdmins() {
     }
     table?.classList.remove('d-none');
     empty?.classList.add('d-none');
-    tbody.innerHTML = allAdmins.map(a => {
+    tbody.innerHTML = admins.map(a => {
         const cr = a.created_at ? formatDate(new Date(a.created_at)) : 'N/A';
         const ll = a.last_login ? formatDate(new Date(a.last_login)) : 'Never';
         return `<tr>
@@ -601,6 +721,7 @@ function renderUsers() {
     const tbody = document.getElementById('usersTableBody');
     const empty = document.getElementById('usersEmptyState');
     const table = document.getElementById('usersTable');
+    const users = getSortedData(allUsers, 'users');
     if (!tbody) return;
     if (!allUsers.length) {
         tbody.innerHTML = '';
@@ -610,7 +731,7 @@ function renderUsers() {
     }
     table?.classList.remove('d-none');
     empty?.classList.add('d-none');
-    tbody.innerHTML = allUsers.map(u => {
+    tbody.innerHTML = users.map(u => {
         const ll = u.last_login ? formatDate(new Date(u.last_login)) : 'Never';
         return `<tr>
             <td><div class="d-flex align-items-center gap-2">
@@ -731,7 +852,7 @@ function renderDocuments() {
     const empty = document.getElementById('docsEmptyState');
     const table = document.getElementById('docsTable');
     if (!tbody) return;
-    const filtered = currentDocFilter === 'all' ? allDocuments : allDocuments.filter(d => d.status === currentDocFilter);
+    let filtered = currentDocFilter === 'all' ? allDocuments : allDocuments.filter(d => d.status === currentDocFilter); filtered = getSortedData(filtered, 'docs');
     if (!filtered.length) {
         tbody.innerHTML = '';
         table?.classList.add('d-none');
@@ -791,3 +912,125 @@ async function logout() {
     } catch { window.location.href = '/'; }
 }
 
+// ==================== SORT BAR ====================
+/*
+ * Unified sort state for each table.
+ * col  = column index (matches <td> position in rendered rows)
+ * dir  = 'asc' | 'desc'
+ */
+const sortState = {
+    admins: { col: 0, dir: 'asc' },
+    users: { col: 0, dir: 'asc' },
+    docs: { col: 0, dir: 'asc' }
+};
+
+/**
+ * Returns the raw sortable value from a rendered <tr> at a given column index.
+ * Strips HTML, handles dates and numbers.
+ */
+function getSortValue(row, colIndex) {
+    const cells = row.querySelectorAll('td');
+    // +1 offset: first <td> is the avatar/name wrapper; we index from 0 matching data cols
+    const cell = cells[colIndex];
+    if (!cell) return '';
+
+    // Prefer data-sort attribute if present (set manually for dates etc.)
+    if (cell.dataset.sort) return cell.dataset.sort;
+
+    // Strip HTML tags → plain text
+    const text = cell.innerText.trim();
+
+    // Numeric
+    const num = parseFloat(text.replace(/,/g, ''));
+    if (!isNaN(num) && text !== '') return num;
+
+    // "Never" → sort to end
+    if (text === 'Never') return '9999-99-99';
+
+    // Date strings — try to parse
+    const d = new Date(text);
+    if (!isNaN(d)) return d.toISOString();
+
+    return text.toLowerCase();
+}
+
+/**
+ * Sorts any tbody by column index and direction.
+ */
+function sortTableBody(tbody, colIndex, dir) {
+    if (!tbody) return;
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    if (rows.length < 2) return;
+
+    rows.sort((a, b) => {
+        const va = getSortValue(a, colIndex);
+        const vb = getSortValue(b, colIndex);
+        if (va < vb) return dir === 'asc' ? -1 : 1;
+        if (va > vb) return dir === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    // Re-append in sorted order
+    rows.forEach(r => tbody.appendChild(r));
+}
+
+/**
+ * Updates button visual state (active + direction arrow).
+ */
+function updateSortButtons(tableKey, activeCol, dir) {
+    document.querySelectorAll(`.sort-btn[data-table="${tableKey}"]`).forEach(btn => {
+        const col = +btn.dataset.col;
+        const dirSpan = btn.querySelector('.sort-dir');
+
+        if (col === activeCol) {
+            btn.classList.add('active');
+            const arrow = dir === 'asc' ? '↑' : '↓';
+            if (dirSpan) {
+                dirSpan.textContent = arrow;
+            } else {
+                btn.insertAdjacentHTML('beforeend',
+                    `<span class="sort-dir">${arrow}</span>`);
+            }
+        } else {
+            btn.classList.remove('active');
+            if (dirSpan) dirSpan.remove();
+        }
+    });
+}
+
+/**
+ * Called when a sort button is clicked.
+ * Toggles direction if already active; else switches column.
+ */
+function handleSortClick(tableKey, colIndex) {
+    const state = sortState[tableKey];
+
+    if (state.col === colIndex) {
+        // Toggle direction
+        state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+        state.col = colIndex;
+        state.dir = 'asc';
+    }
+
+    const tbodyId = {
+        admins: 'adminsTableBody',
+        users: 'usersTableBody',
+        docs: 'docsTableBody'
+    }[tableKey];
+
+    sortTableBody(document.getElementById(tbodyId), state.col, state.dir);
+    updateSortButtons(tableKey, state.col, state.dir);
+}
+
+/**
+ * Wire up all sort buttons once DOM is ready.
+ * Called from DOMContentLoaded — add this line there.
+ */
+function initSortBars() {
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            handleSortClick(btn.dataset.table, +btn.dataset.col);
+        });
+    });
+}
