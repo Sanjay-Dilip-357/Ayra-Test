@@ -13,6 +13,43 @@
         rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
+    <style>
+        /* ── Table header sort buttons ── */
+        .table-sort-btn {
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin: 0;
+            color: inherit;
+            font: inherit;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            cursor: pointer;
+            white-space: nowrap;
+            line-height: 1.4;
+        }
+
+        .table-sort-btn:hover {
+            color: #4facfe;
+        }
+
+        .table-sort-btn .sort-arrow {
+            font-size: 0.78rem;
+            color: #9ca3af;
+            line-height: 1;
+            transition: color 0.15s;
+        }
+
+        .table-sort-btn.active {
+            color: #4facfe;
+        }
+
+        .table-sort-btn.active .sort-arrow {
+            color: #4facfe;
+        }
+    </style>
 </head>
 
 <body>
@@ -228,13 +265,24 @@
                                 <table class="table data-table">
                                     <thead>
                                         <tr>
-                                            <th>User</th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="overview"
+                                                    data-field="name" onclick="setAdminTableSort('overview','name')">
+                                                    User <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
                                             <th>Email</th>
                                             <th>Drafts</th>
                                             <th>Pending</th>
                                             <th>Approved</th>
                                             <th>Generated</th>
-                                            <th>Last Login</th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="overview"
+                                                    data-field="last_login"
+                                                    onclick="setAdminTableSort('overview','last_login')">
+                                                    Last Login <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody id="userActivityBody">
@@ -260,12 +308,29 @@
                                 <table class="table data-table" id="usersTable">
                                     <thead>
                                         <tr>
-                                            <th>Name</th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="adminUsers"
+                                                    data-field="name" onclick="setAdminTableSort('adminUsers','name')">
+                                                    Name <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
                                             <th>Email</th>
                                             <th>Phone</th>
                                             <th>Status</th>
-                                            <th>Created</th>
-                                            <th>Last Login</th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="adminUsers"
+                                                    data-field="created_at"
+                                                    onclick="setAdminTableSort('adminUsers','created_at')">
+                                                    Created <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="adminUsers"
+                                                    data-field="last_login"
+                                                    onclick="setAdminTableSort('adminUsers','last_login')">
+                                                    Last Login <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -377,12 +442,30 @@
                                                 <input type="checkbox" class="form-check-input" id="selectAllDocs"
                                                     onchange="toggleSelectAllDocs()">
                                             </th>
-                                            <th>User</th>
-                                            <th>Old Name</th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="adminDocs"
+                                                    data-field="user_name"
+                                                    onclick="setAdminTableSort('adminDocs','user_name')">
+                                                    User <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="adminDocs"
+                                                    data-field="old_name"
+                                                    onclick="setAdminTableSort('adminDocs','old_name')">
+                                                    Old Name <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
                                             <th>Template</th>
                                             <th>Status</th>
                                             <th>Published</th>
-                                            <th>Modified</th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="adminDocs"
+                                                    data-field="modified_at"
+                                                    onclick="setAdminTableSort('adminDocs','modified_at')">
+                                                    Modified <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
                                             <th style="width: 380px;">Actions</th>
                                         </tr>
                                     </thead>
@@ -650,7 +733,7 @@
                     </div>
 
                     <!-- Action buttons - Error (hidden until error) -->
-                    <div id="printErrorActions" class="d-none" 
+                    <div id="printErrorActions" class="d-none"
                         style="margin-top:1rem; display:flex; gap:.75rem; justify-content:flex-end;">
                         <button class="btn btn-secondary btn-sm" onclick="closePrintProgress()"
                             style="font-weight:600; padding:.45rem 1rem;">
