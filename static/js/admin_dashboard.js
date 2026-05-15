@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
     loadAdminStats();
     loadUsers();
     loadDocuments();
+    updateAdminSortIndicators();
 });
 
 function updateDateTime() {
@@ -263,27 +264,34 @@ function renderUserActivity(users) {
     const tbody = document.getElementById('userActivityBody');
     if (!tbody) return;
 
-    if (users.length === 0) {
+    // Store so sort buttons can re-render without re-fetching
+    allOverviewUsers = users;
+
+    // Apply current sort
+    const sorted = sortAdminData(users, 'overview');
+
+    if (sorted.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="7" class="text-center text-muted py-4">No user activity found</td>
-            </tr>
-        `;
+                <td colspan="7" class="text-center text-muted py-4">
+                    No user activity found
+                </td>
+            </tr>`;
         return;
     }
 
-    tbody.innerHTML = users.map(user => `
+    tbody.innerHTML = sorted.map(user => `
         <tr>
             <td><strong>${user.name}</strong></td>
             <td>${user.email}</td>
-            <td>${user.stats?.drafts || 0}</td>
-            <td>${user.stats?.pending || 0}</td>
-            <td>${user.stats?.approved || 0}</td>
+            <td>${user.stats?.drafts    || 0}</td>
+            <td>${user.stats?.pending   || 0}</td>
+            <td>${user.stats?.approved  || 0}</td>
             <td>${user.stats?.generated || 0}</td>
             <td>${user.last_login
-            ? formatDate(user.last_login)
-            : '<span class="text-muted">Never</span>'
-        }</td>
+                ? formatDate(user.last_login)
+                : '<span class="text-muted">Never</span>'
+            }</td>
         </tr>
     `).join('');
 }
@@ -305,9 +313,8 @@ async function loadUsers() {
 }
 
 function renderUsers(users) {
-    const tbody = document.getElementById('usersTableBody');
+    const tbody      = document.getElementById('usersTableBody');
     const emptyState = document.getElementById('usersEmptyState');
-
     if (!tbody) return;
 
     if (users.length === 0) {
@@ -318,24 +325,27 @@ function renderUsers(users) {
 
     if (emptyState) emptyState.classList.add('d-none');
 
-    tbody.innerHTML = users.map(user => `
+    // Apply current sort
+    const sorted = sortAdminData(users, 'adminUsers');
+
+    tbody.innerHTML = sorted.map(user => `
         <tr>
             <td><strong>${user.name}</strong></td>
             <td>${user.email}</td>
             <td>${user.phone || '-'}</td>
             <td>
                 ${user.is_active
-            ? '<span class="badge bg-success">Active</span>'
-            : '<span class="badge bg-danger">Inactive</span>'}
+                    ? '<span class="badge bg-success">Active</span>'
+                    : '<span class="badge bg-danger">Inactive</span>'}
                 ${user.is_approved
-            ? '<span class="badge bg-info ms-1">Approved</span>'
-            : '<span class="badge bg-warning ms-1">Pending</span>'}
+                    ? '<span class="badge bg-info ms-1">Approved</span>'
+                    : '<span class="badge bg-warning ms-1">Pending</span>'}
             </td>
             <td>${formatDate(user.created_at)}</td>
             <td>${user.last_login
-            ? formatDate(user.last_login)
-            : '<span class="text-muted">Never</span>'
-        }</td>
+                ? formatDate(user.last_login)
+                : '<span class="text-muted">Never</span>'
+            }</td>
             <td>
                 <button class="btn btn-sm btn-outline-primary me-1"
                         onclick="editUser('${user.id}')" title="Edit">
@@ -585,6 +595,7 @@ function renderDocuments(documents) {
     if (currentFilter !== 'all') {
         filteredDocs = documents.filter(d => d.status === currentFilter);
     }
+    filteredDocs = sortAdminData(filteredDocs, 'adminDocs');
 
     if (filteredDocs.length === 0) {
         tbody.innerHTML = '';
@@ -1790,4 +1801,111 @@ async function cancelPrintFromTable(docId) {
     } catch (err) {
         showToast('Warning', 'Print cancelled.', 'warning');
     }
+}
+
+// ==================== TABLE SORT ====================
+
+// Tracks sort state for each table
+const adminTableSort = {
+    overview:   { field: null, dir: 'asc' },
+    adminUsers: { field: null, dir: 'asc' },
+    adminDocs:  { field: null, dir: 'asc' }
+};
+
+// Keeps a reference to the raw overview users array
+// so we can re-sort without re-fetching
+let allOverviewUsers = [];
+
+/**
+ * Called when any sort header button is clicked.
+ * Toggles direction if same column, resets to asc if new column.
+ */
+function setAdminTableSort(table, field) {
+    const state = adminTableSort[table];
+    if (!state) return;
+
+    if (state.field === field) {
+        // Same column → toggle direction
+        state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+        // New column → ascending by default
+        state.field = field;
+        state.dir   = 'asc';
+    }
+
+    // Update all arrow indicators
+    updateAdminSortIndicators();
+
+    // Re-render the affected table
+    if (table === 'overview')   renderUserActivity(allOverviewUsers);
+    if (table === 'adminUsers') renderUsers(allUsers);
+    if (table === 'adminDocs')  renderDocuments(allDocuments);
+}
+
+/**
+ * Extracts a comparable value from a data item for a given field.
+ * Date fields return a numeric timestamp (null-safe).
+ */
+function getAdminSortValue(item, field) {
+    const dateFields = ['last_login', 'created_at', 'modified_at'];
+
+    if (dateFields.includes(field)) {
+        const v = item[field];
+        if (!v) return null;
+        const t = new Date(v).getTime();
+        return isNaN(t) ? null : t;
+    }
+
+    const v = item[field];
+    if (v === null || v === undefined) return null;
+    if (typeof v === 'number') return v;
+    return String(v).toLowerCase().trim();
+}
+
+/**
+ * Returns a new sorted copy of list using the current sort state for `table`.
+ * Nulls always sort to the bottom regardless of direction.
+ */
+function sortAdminData(list, table) {
+    const state = adminTableSort[table];
+
+    // No sort active → return original order
+    if (!state || !state.field) return [...list];
+
+    return [...list].sort((a, b) => {
+        const av = getAdminSortValue(a, state.field);
+        const bv = getAdminSortValue(b, state.field);
+
+        // Nulls always last
+        if (av === null && bv === null) return 0;
+        if (av === null) return 1;
+        if (bv === null) return -1;
+
+        if (av < bv) return state.dir === 'asc' ? -1 :  1;
+        if (av > bv) return state.dir === 'asc' ?  1 : -1;
+        return 0;
+    });
+}
+
+/**
+ * Refreshes the ↕ / ↑ / ↓ arrows on every sort button.
+ * Active column gets a coloured arrow; others reset to ↕.
+ */
+function updateAdminSortIndicators() {
+    document.querySelectorAll('.table-sort-btn').forEach(btn => {
+        const table = btn.dataset.table;
+        const field = btn.dataset.field;
+        const arrow = btn.querySelector('.sort-arrow');
+        const state = adminTableSort[table];
+
+        btn.classList.remove('active');
+        if (!arrow) return;
+
+        if (state && state.field === field) {
+            btn.classList.add('active');
+            arrow.textContent = state.dir === 'asc' ? '↑' : '↓';
+        } else {
+            arrow.textContent = '↕';
+        }
+    });
 }
