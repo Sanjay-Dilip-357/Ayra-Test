@@ -790,6 +790,39 @@
         .user-avatar-green {
             background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
         }
+
+        /* Table header sort button */
+        .table-sort-btn {
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin: 0;
+            color: inherit;
+            font: inherit;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            cursor: pointer;
+        }
+
+        .table-sort-btn:hover {
+            color: #1d4ed8;
+        }
+
+        .table-sort-btn .sort-arrow {
+            font-size: 0.8rem;
+            color: #9ca3af;
+            line-height: 1;
+        }
+
+        .table-sort-btn.active {
+            color: #1d4ed8;
+        }
+
+        .table-sort-btn.active .sort-arrow {
+            color: #1d4ed8;
+        }
     </style>
 </head>
 
@@ -1032,7 +1065,7 @@
                     <!-- Admins Tab -->
                     <div class="tab-pane fade" id="admins" role="tabpanel" aria-labelledby="admins-tab">
                         <div class="tab-content-card">
-                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                                 <h5 class="section-title mb-0"><i class="bi bi-shield-lock"></i> Admin Management</h5>
                                 <div class="d-flex gap-2 flex-wrap">
                                     <a href="/setup-admin" class="btn btn-secondary" data-testid="add-admin-btn">
@@ -1044,16 +1077,50 @@
                                     </a>
                                 </div>
                             </div>
+
+
                             <div class="table-responsive">
                                 <table class="data-table" id="adminsTable">
                                     <thead>
                                         <tr>
-                                            <th>Name</th>
-                                            <th>Email</th>
-                                            <th>Phone</th>
-                                            <th>Status</th>
-                                            <th>Created</th>
-                                            <th>Last Login</th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="admins"
+                                                    data-field="name" onclick="setTableSort('admins','name')">
+                                                    Name <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="admins"
+                                                    data-field="email" onclick="setTableSort('admins','email')">
+                                                    Email <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="admins"
+                                                    data-field="phone" onclick="setTableSort('admins','phone')">
+                                                    Phone <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="admins"
+                                                    data-field="status" onclick="setTableSort('admins','status')">
+                                                    Status <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="admins"
+                                                    data-field="created_at"
+                                                    onclick="setTableSort('admins','created_at')">
+                                                    Created <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="admins"
+                                                    data-field="last_login"
+                                                    onclick="setTableSort('admins','last_login')">
+                                                    Last Login <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -1073,23 +1140,36 @@
                     <!-- Users Tab -->
                     <div class="tab-pane fade" id="users" role="tabpanel" aria-labelledby="users-tab">
                         <div class="tab-content-card">
-                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                                 <h5 class="section-title mb-0"><i class="bi bi-people"></i> User Management</h5>
                                 <button type="button" class="btn btn-primary" onclick="showAddUserModal()"
                                     data-testid="add-user-btn">
                                     <i class="bi bi-person-plus"></i> Add User
                                 </button>
                             </div>
+
+
                             <div class="table-responsive">
                                 <table class="data-table" id="usersTable">
                                     <thead>
                                         <tr>
-                                            <th>Name</th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="users"
+                                                    data-field="name" onclick="setTableSort('users','name')">
+                                                    Name <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
                                             <th>Email</th>
                                             <th>Phone</th>
                                             <th>Documents</th>
                                             <th>Status</th>
-                                            <th>Last Login</th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="users"
+                                                    data-field="last_login"
+                                                    onclick="setTableSort('users','last_login')">
+                                                    Last Login <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -1107,7 +1187,7 @@
                     <!-- Documents Tab -->
                     <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
                         <div class="tab-content-card">
-                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                                 <h5 class="section-title mb-0"><i class="bi bi-files"></i> All Documents</h5>
                                 <div class="d-flex gap-2 flex-wrap" role="group" aria-label="Document filters">
                                     <button type="button" class="btn btn-sm btn-primary" onclick="filterDocs('all')"
@@ -1123,15 +1203,32 @@
                                         data-testid="filter-generated">Generated</button>
                                 </div>
                             </div>
+
                             <div class="table-responsive">
                                 <table class="data-table" id="docsTable">
                                     <thead>
                                         <tr>
-                                            <th>User</th>
-                                            <th>Old Name</th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="docs"
+                                                    data-field="user_name" onclick="setTableSort('docs','user_name')">
+                                                    User <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="docs"
+                                                    data-field="old_name" onclick="setTableSort('docs','old_name')">
+                                                    Old Name <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
                                             <th>Template</th>
                                             <th>Status</th>
-                                            <th>Modified</th>
+                                            <th>
+                                                <button type="button" class="table-sort-btn" data-table="docs"
+                                                    data-field="modified_at"
+                                                    onclick="setTableSort('docs','modified_at')">
+                                                    Modified <span class="sort-arrow">↕</span>
+                                                </button>
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody id="docsTableBody" data-testid="docs-table-body"></tbody>
