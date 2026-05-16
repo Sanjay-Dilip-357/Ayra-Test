@@ -284,14 +284,14 @@ function renderUserActivity(users) {
         <tr>
             <td><strong>${user.name}</strong></td>
             <td>${user.email}</td>
-            <td>${user.stats?.drafts    || 0}</td>
-            <td>${user.stats?.pending   || 0}</td>
-            <td>${user.stats?.approved  || 0}</td>
+            <td>${user.stats?.drafts || 0}</td>
+            <td>${user.stats?.pending || 0}</td>
+            <td>${user.stats?.approved || 0}</td>
             <td>${user.stats?.generated || 0}</td>
             <td>${user.last_login
-                ? formatDate(user.last_login)
-                : '<span class="text-muted">Never</span>'
-            }</td>
+            ? formatDate(user.last_login)
+            : '<span class="text-muted">Never</span>'
+        }</td>
         </tr>
     `).join('');
 }
@@ -313,7 +313,7 @@ async function loadUsers() {
 }
 
 function renderUsers(users) {
-    const tbody      = document.getElementById('usersTableBody');
+    const tbody = document.getElementById('usersTableBody');
     const emptyState = document.getElementById('usersEmptyState');
     if (!tbody) return;
 
@@ -335,17 +335,17 @@ function renderUsers(users) {
             <td>${user.phone || '-'}</td>
             <td>
                 ${user.is_active
-                    ? '<span class="badge bg-success">Active</span>'
-                    : '<span class="badge bg-danger">Inactive</span>'}
+            ? '<span class="badge bg-success">Active</span>'
+            : '<span class="badge bg-danger">Inactive</span>'}
                 ${user.is_approved
-                    ? '<span class="badge bg-info ms-1">Approved</span>'
-                    : '<span class="badge bg-warning ms-1">Pending</span>'}
+            ? '<span class="badge bg-info ms-1">Approved</span>'
+            : '<span class="badge bg-warning ms-1">Pending</span>'}
             </td>
             <td>${formatDate(user.created_at)}</td>
             <td>${user.last_login
-                ? formatDate(user.last_login)
-                : '<span class="text-muted">Never</span>'
-            }</td>
+            ? formatDate(user.last_login)
+            : '<span class="text-muted">Never</span>'
+        }</td>
             <td>
                 <button class="btn btn-sm btn-outline-primary me-1"
                         onclick="editUser('${user.id}')" title="Edit">
@@ -1059,6 +1059,19 @@ function editDocument(docId) {
     const modalBody = document.getElementById('editDocBody');
     modalBody.innerHTML = buildEditForm(doc);
 
+    // ── Populate existing aliases ──────────────────────────────
+    const r = doc.replacements || {};
+    const { aliases: parsedAliases } = parseOldNameWithAliases(r.OLD_NAME || '');
+    parsedAliases.forEach(function (aliasVal) {
+        addEditAliasField(aliasVal);
+    });
+
+    // Trigger preview if aliases exist
+    if (parsedAliases.length > 0) {
+        updateEditAliasPreview();
+    }
+    // ────────────────────────────────────────────────────────────
+
     const modal = new bootstrap.Modal(document.getElementById('editDocModal'));
     modal.show();
 
@@ -1110,80 +1123,137 @@ function buildEditForm(doc) {
         </h6>
     `;
 
+    // Parse existing aliases from OLD_NAME
+    const { baseName: parsedBaseName, aliases: parsedAliases } = parseOldNameWithAliases(r.OLD_NAME || '');
+
+    // Reset alias counter for this edit session
+    editAliasCounter = 0;
+
     html += `
-        <div class="form-section">
-            <div class="section-header">
-                <div class="section-icon"><i class="bi bi-person-fill"></i></div>
-                <h6 class="section-title">Personal Details</h6>
+    <div class="form-section">
+        <div class="section-header">
+            <div class="section-icon"><i class="bi bi-person-fill"></i></div>
+            <h6 class="section-title">Personal Details</h6>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">
+                    ${doc.template_type === 'minor_template' ? 'Child Old Name' : 'Old Name'}
+                    <span class="required-asterisk">*</span>
+                    <small class="text-muted">(+alias)</small>
+                </label>
+                <div style="display:flex; gap:0.5rem; align-items:flex-start;">
+                    <div class="input-group flex-grow-1">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        <input type="text" class="form-control" id="editOldName"
+                               value="${escapeHtml(parsedBaseName)}"
+                               style="text-transform:uppercase;"
+                               oninput="this.value=this.value.toUpperCase(); updateEditAliasPreview();">
+                    </div>
+                    <button type="button"
+                            title="Add Alias"
+                            onclick="addEditAliasField()"
+                            style="background:linear-gradient(135deg,#1a1a1a 0%,#444 100%);
+                                   border:none; color:white; padding:0; border-radius:8px;
+                                   width:42px; height:42px; min-width:42px;
+                                   display:flex; align-items:center; justify-content:center;
+                                   cursor:pointer; flex-shrink:0; transition:all 0.2s ease;"
+                            onmouseover="this.style.opacity='0.85'"
+                            onmouseout="this.style.opacity='1'">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Alias fields container -->
+                <div id="editAliasContainer" style="margin-top:0.5rem;"></div>
+
+                <!-- Alias counter -->
+                <div id="editAliasCounter"
+                     style="display:none; margin-top:0.5rem; padding:0.35rem 0.65rem;
+                            background:var(--lightest-gray,#f8f9fa); border-radius:6px;
+                            font-size:0.75rem; color:#6c757d;">
+                    <i class="bi bi-tags me-1"></i>Aliases: <span class="count">0</span>
+                </div>
+
+                <!-- Alias preview -->
+                <div id="editAliasPreview"
+                     style="display:none; margin-top:0.75rem; padding:0.75rem;
+                            background:#f8f9fa; border-radius:8px;
+                            border:1px solid #dee2e6;">
+                    <div style="font-size:0.75rem; font-weight:600; color:#6c757d;
+                                margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.3px;">
+                        <i class="bi bi-eye me-1"></i>Preview:
+                    </div>
+                    <div id="editAliasPreviewText" style="word-break:break-word;"></div>
+                </div>
             </div>
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">Old Name <span class="required-asterisk">*</span></label>
-                    <input type="text" class="form-control uppercase-input" id="editOldName"
-                           value="${r.OLD_NAME || ''}" style="text-transform:uppercase;">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">New Name</label>
-                    <input type="text" class="form-control uppercase-input" id="editNewName"
-                           value="${r.NEW_NAME || ''}" style="text-transform:uppercase;">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Relation</label>
-                    <select class="form-select" id="editRelation" onchange="handleRelationChange()">
-                        <option value="">Select...</option>
-                        <option value="S/o" ${relation === 'S/o' ? 'selected' : ''}>S/o (Son of)</option>
-                        <option value="D/o" ${relation === 'D/o' ? 'selected' : ''}>D/o (Daughter of)</option>
-                        <option value="W/o" ${relation === 'W/o' ? 'selected' : ''}>W/o (Wife of)</option>
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Father/Spouse Name</label>
-                    <input type="text" class="form-control uppercase-input" id="editFatherSpouse"
-                           value="${r['FATHER-SPOUSE_NAME'] || ''}" style="text-transform:uppercase;">
-                </div>
-                <div class="col-12" id="dualRelationContainer"
-                     style="display:${hasSpouse || relation === 'D/o' ? 'block' : 'none'};">
-                    <div class="dual-relation-card">
-                        <div class="card-header">
-                            <i class="bi bi-heart-fill me-2"></i>D/o & W/o - Additional Spouse Details
-                        </div>
-                        <div class="card-body p-3">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Spouse Name</label>
-                                    <input type="text" class="form-control uppercase-input" id="editSpouseName1"
-                                           value="${r.SPOUSE_NAME1 || ''}" style="text-transform:uppercase;">
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-check mt-4">
-                                        <input class="form-check-input" type="checkbox" id="editHasSpouse"
-                                               ${hasSpouse ? 'checked' : ''} onchange="toggleSpouseFields()">
-                                        <label class="form-check-label" for="editHasSpouse">
-                                            Include W/o (Wife of) in document
-                                        </label>
-                                    </div>
+`;
+
+    // We'll close this partial HTML and continue below
+    // Now build the rest of the row normally
+    html += `
+            <div class="col-md-6">
+                <label class="form-label">New Name</label>
+                <input type="text" class="form-control uppercase-input" id="editNewName"
+                       value="${escapeHtml(r.NEW_NAME || '')}" style="text-transform:uppercase;">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Relation</label>
+                <select class="form-select" id="editRelation" onchange="handleRelationChange()">
+                    <option value="">Select...</option>
+                    <option value="S/o" ${relation === 'S/o' ? 'selected' : ''}>S/o (Son of)</option>
+                    <option value="D/o" ${relation === 'D/o' ? 'selected' : ''}>D/o (Daughter of)</option>
+                    <option value="W/o" ${relation === 'W/o' ? 'selected' : ''}>W/o (Wife of)</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Father/Spouse Name</label>
+                <input type="text" class="form-control uppercase-input" id="editFatherSpouse"
+                       value="${escapeHtml(r['FATHER-SPOUSE_NAME'] || '')}" style="text-transform:uppercase;">
+            </div>
+            <div class="col-12" id="dualRelationContainer"
+                 style="display:${hasSpouse || relation === 'D/o' ? 'block' : 'none'};">
+                <div class="dual-relation-card">
+                    <div class="card-header">
+                        <i class="bi bi-heart-fill me-2"></i>D/o & W/o - Additional Spouse Details
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Spouse Name</label>
+                                <input type="text" class="form-control uppercase-input" id="editSpouseName1"
+                                       value="${escapeHtml(r.SPOUSE_NAME1 || '')}" style="text-transform:uppercase;">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" type="checkbox" id="editHasSpouse"
+                                           ${hasSpouse ? 'checked' : ''} onchange="toggleSpouseFields()">
+                                    <label class="form-check-label" for="editHasSpouse">
+                                        Include W/o (Wife of) in document
+                                    </label>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">Gender</label>
-                    <select class="form-select" id="editGender">
-                        <option value="">Select...</option>
-                        <option value="MALE"   ${(r.GENDER_UPDATE || '').toUpperCase() === 'MALE' ? 'selected' : ''}>Male</option>
-                        <option value="FEMALE" ${(r.GENDER_UPDATE || '').toUpperCase() === 'FEMALE' ? 'selected' : ''}>Female</option>
-                        <option value="OTHER"  ${(r.GENDER_UPDATE || '').toUpperCase() === 'OTHER' ? 'selected' : ''}>Other</option>
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Cast</label>
-                    <input type="text" class="form-control uppercase-input" id="editCast"
-                           value="${r.CAST_UPDATE || ''}" style="text-transform:uppercase;">
-                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Gender</label>
+                <select class="form-select" id="editGender">
+                    <option value="">Select...</option>
+                    <option value="MALE"   ${(r.GENDER_UPDATE || '').toUpperCase() === 'MALE' ? 'selected' : ''}>Male</option>
+                    <option value="FEMALE" ${(r.GENDER_UPDATE || '').toUpperCase() === 'FEMALE' ? 'selected' : ''}>Female</option>
+                    <option value="OTHER"  ${(r.GENDER_UPDATE || '').toUpperCase() === 'OTHER' ? 'selected' : ''}>Other</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Cast</label>
+                <input type="text" class="form-control uppercase-input" id="editCast"
+                       value="${escapeHtml(r.CAST_UPDATE || '')}" style="text-transform:uppercase;">
             </div>
         </div>
-    `;
+    </div>
+`;
 
     if (doc.template_type === 'minor_template') {
         html += `
@@ -1379,7 +1449,7 @@ async function saveDocumentChanges() {
     saveBtn.disabled = true;
 
     const replacements = {
-        OLD_NAME: document.getElementById('editOldName')?.value.toUpperCase().trim() || '',
+        OLD_NAME: buildAdminOldNameWithAliases(),
         NEW_NAME: document.getElementById('editNewName')?.value.toUpperCase().trim() || '',
         UPDATE_RELATION: document.getElementById('editRelation')?.value || '',
         'FATHER-SPOUSE_NAME': document.getElementById('editFatherSpouse')?.value.toUpperCase().trim() || '',
@@ -1807,9 +1877,9 @@ async function cancelPrintFromTable(docId) {
 
 // Tracks sort state for each table
 const adminTableSort = {
-    overview:   { field: null, dir: 'asc' },
+    overview: { field: null, dir: 'asc' },
     adminUsers: { field: null, dir: 'asc' },
-    adminDocs:  { field: null, dir: 'asc' }
+    adminDocs: { field: null, dir: 'asc' }
 };
 
 // Keeps a reference to the raw overview users array
@@ -1830,16 +1900,16 @@ function setAdminTableSort(table, field) {
     } else {
         // New column → ascending by default
         state.field = field;
-        state.dir   = 'asc';
+        state.dir = 'asc';
     }
 
     // Update all arrow indicators
     updateAdminSortIndicators();
 
     // Re-render the affected table
-    if (table === 'overview')   renderUserActivity(allOverviewUsers);
+    if (table === 'overview') renderUserActivity(allOverviewUsers);
     if (table === 'adminUsers') renderUsers(allUsers);
-    if (table === 'adminDocs')  renderDocuments(allDocuments);
+    if (table === 'adminDocs') renderDocuments(allDocuments);
 }
 
 /**
@@ -1881,8 +1951,8 @@ function sortAdminData(list, table) {
         if (av === null) return 1;
         if (bv === null) return -1;
 
-        if (av < bv) return state.dir === 'asc' ? -1 :  1;
-        if (av > bv) return state.dir === 'asc' ?  1 : -1;
+        if (av < bv) return state.dir === 'asc' ? -1 : 1;
+        if (av > bv) return state.dir === 'asc' ? 1 : -1;
         return 0;
     });
 }
@@ -1908,4 +1978,162 @@ function updateAdminSortIndicators() {
             arrow.textContent = '↕';
         }
     });
+}
+
+
+// ==================== ALIAS HELPERS (ADMIN EDIT) ====================
+
+/**
+ * Parses "NAME alias ALIAS1 alias ALIAS2" into { baseName, aliases[] }
+ */
+function parseOldNameWithAliases(oldName) {
+    if (!oldName) return { baseName: '', aliases: [] };
+    const parts = oldName.split(/\s+alias\s+/i);
+    return {
+        baseName: parts[0].trim(),
+        aliases: parts.slice(1).map(a => a.trim()).filter(Boolean)
+    };
+}
+
+/**
+ * Builds "NAME alias ALIAS1 alias ALIAS2" from baseName + aliases[]
+ */
+function buildAdminOldNameWithAliases() {
+    const baseInput = document.getElementById('editOldName');
+    const container = document.getElementById('editAliasContainer');
+    if (!baseInput) return '';
+
+    const baseName = baseInput.value.trim().toUpperCase();
+    if (!container) return baseName;
+
+    const aliasInputs = container.querySelectorAll('.edit-alias-input');
+    const aliases = [];
+    aliasInputs.forEach(function (inp) {
+        const v = inp.value.trim().toUpperCase();
+        if (v) aliases.push(v);
+    });
+
+    if (aliases.length === 0) return baseName;
+    return baseName + ' alias ' + aliases.join(' alias ');
+}
+
+let editAliasCounter = 0;
+
+/**
+ * Adds a new alias field in the edit modal
+ */
+function addEditAliasField(existingValue) {
+    editAliasCounter++;
+    const container = document.getElementById('editAliasContainer');
+    if (!container) return;
+
+    const n = editAliasCounter;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'alias-field-wrapper';
+    wrapper.id = 'edit_alias_item_' + n;
+    wrapper.style.cssText = 'display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem; animation: slideDown 0.3s ease;';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-control edit-alias-input';
+    input.placeholder = 'Alias ' + n;
+    input.value = existingValue ? existingValue.toUpperCase() : '';
+    input.style.textTransform = 'uppercase';
+    input.setAttribute('oninput', 'this.value=this.value.toUpperCase(); updateEditAliasPreview();');
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.title = 'Remove Alias';
+    deleteBtn.style.cssText = `
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        border: none;
+        color: white;
+        padding: 0;
+        border-radius: 8px;
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+    `;
+    deleteBtn.innerHTML = '<i class="bi bi-trash3"></i>';
+    deleteBtn.setAttribute('onclick', 'removeEditAliasField(' + n + ')');
+
+    wrapper.appendChild(input);
+    wrapper.appendChild(deleteBtn);
+    container.appendChild(wrapper);
+
+    updateEditAliasCounter();
+    updateEditAliasPreview();
+
+    if (!existingValue) input.focus();
+}
+
+/**
+ * Removes an alias field by index
+ */
+function removeEditAliasField(n) {
+    const el = document.getElementById('edit_alias_item_' + n);
+    if (el) {
+        el.remove();
+        updateEditAliasCounter();
+        updateEditAliasPreview();
+    }
+}
+
+/**
+ * Updates the alias count badge
+ */
+function updateEditAliasCounter() {
+    const container = document.getElementById('editAliasContainer');
+    const counter = document.getElementById('editAliasCounter');
+    if (!container || !counter) return;
+
+    const count = container.querySelectorAll('.alias-field-wrapper').length;
+    if (count > 0) {
+        counter.style.display = 'inline-block';
+        const span = counter.querySelector('.count');
+        if (span) span.textContent = count;
+    } else {
+        counter.style.display = 'none';
+    }
+}
+
+/**
+ * Updates the alias preview text
+ */
+function updateEditAliasPreview() {
+    const baseInput = document.getElementById('editOldName');
+    const container = document.getElementById('editAliasContainer');
+    const preview = document.getElementById('editAliasPreview');
+    const previewText = document.getElementById('editAliasPreviewText');
+
+    if (!baseInput || !container || !preview || !previewText) return;
+
+    const baseName = baseInput.value.trim().toUpperCase();
+    const aliasInputs = container.querySelectorAll('.edit-alias-input');
+
+    let html = '<span style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:0.25rem 0.5rem;border-radius:6px;display:inline-block;margin:0.25rem;font-weight:600;">'
+        + (escapeHtml(baseName) || 'NAME') + '</span>';
+
+    let hasAlias = false;
+    aliasInputs.forEach(function (inp) {
+        const v = inp.value.trim().toUpperCase();
+        if (v) {
+            hasAlias = true;
+            html += '<span style="color:var(--primary-gray);font-style:italic;font-weight:500;margin:0 0.25rem;">alias</span>'
+                + '<span style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:0.25rem 0.5rem;border-radius:6px;display:inline-block;margin:0.25rem;font-weight:600;">'
+                + escapeHtml(v) + '</span>';
+        }
+    });
+
+    if (baseName || hasAlias) {
+        preview.style.display = 'block';
+        previewText.innerHTML = html;
+    } else {
+        preview.style.display = 'none';
+    }
 }
