@@ -1087,8 +1087,15 @@ function buildEditForm(doc) {
     const relation = r.UPDATE_RELATION || '';
     const hasSpouse = r.WIFE_OF && r.SPOUSE_NAME1;
 
+    // Parse aliases from OLD_NAME
+    const { baseName: parsedBaseName, aliases: parsedAliases } = parseOldNameWithAliases(r.OLD_NAME || '');
+
+    // Reset alias counter
+    editAliasCounter = 0;
+
     let html = `<input type="hidden" id="editDocId" value="${doc.id}">`;
 
+    // ── CD Preview Section (common for all templates) ──────────
     html += `
         <div class="cd-document-section mb-4">
             <div class="cd-document-header">
@@ -1123,178 +1130,474 @@ function buildEditForm(doc) {
         </h6>
     `;
 
-    // Parse existing aliases from OLD_NAME
-    const { baseName: parsedBaseName, aliases: parsedAliases } = parseOldNameWithAliases(r.OLD_NAME || '');
+    // ============================================================
+    // MINOR TEMPLATE - completely separate layout
+    // ============================================================
+    if (doc.template_type === 'minor_template') {
 
-    // Reset alias counter for this edit session
-    editAliasCounter = 0;
-
-    html += `
-    <div class="form-section">
-        <div class="section-header">
-            <div class="section-icon"><i class="bi bi-person-fill"></i></div>
-            <h6 class="section-title">Personal Details</h6>
-        </div>
-        <div class="row g-3">
-            <div class="col-md-6">
-                <label class="form-label">
-                    ${doc.template_type === 'minor_template' ? 'Child Old Name' : 'Old Name'}
-                    <span class="required-asterisk">*</span>
-                    <small class="text-muted">(+alias)</small>
-                </label>
-                <div style="display:flex; gap:0.5rem; align-items:flex-start;">
-                    <div class="input-group flex-grow-1">
-                        <span class="input-group-text"><i class="bi bi-person"></i></span>
-                        <input type="text" class="form-control" id="editOldName"
-                               value="${escapeHtml(parsedBaseName)}"
-                               style="text-transform:uppercase;"
-                               oninput="this.value=this.value.toUpperCase(); updateEditAliasPreview();">
+        // ── Section 1: Parent/Guardian Details ──────────────────
+        html += `
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon" style="background:var(--primary-gray,#6c757d);">
+                        <i class="bi bi-people-fill"></i>
                     </div>
-                    <button type="button"
-                            title="Add Alias"
-                            onclick="addEditAliasField()"
-                            style="background:linear-gradient(135deg,#1a1a1a 0%,#444 100%);
-                                   border:none; color:white; padding:0; border-radius:8px;
-                                   width:42px; height:42px; min-width:42px;
-                                   display:flex; align-items:center; justify-content:center;
-                                   cursor:pointer; flex-shrink:0; transition:all 0.2s ease;"
-                            onmouseover="this.style.opacity='0.85'"
-                            onmouseout="this.style.opacity='1'">
-                        <i class="bi bi-plus-lg"></i>
-                    </button>
+                    <h6 class="section-title">Parent / Guardian Details</h6>
                 </div>
+                <div class="row g-3">
 
-                <!-- Alias fields container -->
-                <div id="editAliasContainer" style="margin-top:0.5rem;"></div>
-
-                <!-- Alias counter -->
-                <div id="editAliasCounter"
-                     style="display:none; margin-top:0.5rem; padding:0.35rem 0.65rem;
-                            background:var(--lightest-gray,#f8f9fa); border-radius:6px;
-                            font-size:0.75rem; color:#6c757d;">
-                    <i class="bi bi-tags me-1"></i>Aliases: <span class="count">0</span>
-                </div>
-
-                <!-- Alias preview -->
-                <div id="editAliasPreview"
-                     style="display:none; margin-top:0.75rem; padding:0.75rem;
-                            background:#f8f9fa; border-radius:8px;
-                            border:1px solid #dee2e6;">
-                    <div style="font-size:0.75rem; font-weight:600; color:#6c757d;
-                                margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.3px;">
-                        <i class="bi bi-eye me-1"></i>Preview:
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            Father/Mother Name <span class="required-asterisk">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person-heart"></i></span>
+                            <input type="text" class="form-control" id="editFatherMother"
+                                   value="${escapeHtml(r['FATHER-MOTHER_NAME'] || '')}"
+                                   style="text-transform:uppercase;"
+                                   oninput="this.value=this.value.toUpperCase();">
+                        </div>
                     </div>
-                    <div id="editAliasPreviewText" style="word-break:break-word;"></div>
-                </div>
-            </div>
-`;
 
-    // We'll close this partial HTML and continue below
-    // Now build the rest of the row normally
-    html += `
-            <div class="col-md-6">
-                <label class="form-label">New Name</label>
-                <input type="text" class="form-control uppercase-input" id="editNewName"
-                       value="${escapeHtml(r.NEW_NAME || '')}" style="text-transform:uppercase;">
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">Relation</label>
-                <select class="form-select" id="editRelation" onchange="handleRelationChange()">
-                    <option value="">Select...</option>
-                    <option value="S/o" ${relation === 'S/o' ? 'selected' : ''}>S/o (Son of)</option>
-                    <option value="D/o" ${relation === 'D/o' ? 'selected' : ''}>D/o (Daughter of)</option>
-                    <option value="W/o" ${relation === 'W/o' ? 'selected' : ''}>W/o (Wife of)</option>
-                </select>
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">Father/Spouse Name</label>
-                <input type="text" class="form-control uppercase-input" id="editFatherSpouse"
-                       value="${escapeHtml(r['FATHER-SPOUSE_NAME'] || '')}" style="text-transform:uppercase;">
-            </div>
-            <div class="col-12" id="dualRelationContainer"
-                 style="display:${hasSpouse || relation === 'D/o' ? 'block' : 'none'};">
-                <div class="dual-relation-card">
-                    <div class="card-header">
-                        <i class="bi bi-heart-fill me-2"></i>D/o & W/o - Additional Spouse Details
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            Relationship <span class="required-asterisk">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-people"></i></span>
+                            <select class="form-select" id="editRelation"
+                                    onchange="handleMinorRelationChangeEdit()">
+                                <option value="">Select...</option>
+                                <option value="S/o" ${relation === 'S/o' ? 'selected' : ''}>S/o</option>
+                                <option value="D/o" ${relation === 'D/o' ? 'selected' : ''}>D/o</option>
+                                <option value="W/o" ${relation === 'W/o' ? 'selected' : ''}>W/o</option>
+                                <option value="D/o & W/o" ${relation === 'D/o & W/o' ? 'selected' : ''}>D/o & W/o</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="card-body p-3">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Spouse Name</label>
-                                <input type="text" class="form-control uppercase-input" id="editSpouseName1"
-                                       value="${escapeHtml(r.SPOUSE_NAME1 || '')}" style="text-transform:uppercase;">
+
+                    <!-- Normal Guardian Spouse Field -->
+                    <div class="col-md-6" id="editMinorNormalSpouseField"
+                         style="display:${relation === 'D/o & W/o' ? 'none' : 'block'};">
+                        <label class="form-label">
+                            Guardian Spouse <span class="required-asterisk">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person"></i></span>
+                            <input type="text" class="form-control" id="editFatherSpouse"
+                                   value="${escapeHtml(r['FATHER-SPOUSE_NAME'] || '')}"
+                                   style="text-transform:uppercase;"
+                                   oninput="this.value=this.value.toUpperCase();">
+                        </div>
+                    </div>
+
+                    <!-- Dual Relation Fields (D/o & W/o) -->
+                    <div class="col-12" id="editMinorDualRelationFields"
+                         style="display:${relation === 'D/o & W/o' ? 'block' : 'none'};">
+                        <div class="dual-relation-card">
+                            <div class="card-header">
+                                <i class="bi bi-people-fill me-2"></i>D/o & W/o - Guardian Names
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-check mt-4">
-                                    <input class="form-check-input" type="checkbox" id="editHasSpouse"
-                                           ${hasSpouse ? 'checked' : ''} onchange="toggleSpouseFields()">
-                                    <label class="form-check-label" for="editHasSpouse">
-                                        Include W/o (Wife of) in document
-                                    </label>
+                            <div class="card-body p-3">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">
+                                            Guardian's Father <span class="required-asterisk">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"
+                                                  style="background:var(--primary-dark,#1a1a1a);
+                                                         color:white;">D/o</span>
+                                            <input type="text" class="form-control"
+                                                   id="editGuardianFather"
+                                                   value="${escapeHtml(r.GUARDIAN_FATHER_NAME || r['FATHER-SPOUSE_NAME'] || '')}"
+                                                   style="text-transform:uppercase;"
+                                                   oninput="this.value=this.value.toUpperCase();">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">
+                                            Guardian's Husband <span class="required-asterisk">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"
+                                                  style="background:var(--primary-gray,#6c757d);
+                                                         color:white;">W/o</span>
+                                            <input type="text" class="form-control"
+                                                   id="editGuardianSpouse"
+                                                   value="${escapeHtml(r.GUARDIAN_SPOUSE_NAME || r.SPOUSE_NAME1 || '')}"
+                                                   style="text-transform:uppercase;"
+                                                   oninput="this.value=this.value.toUpperCase();">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            Address <span class="required-asterisk">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-house"></i></span>
+                            <input type="text" class="form-control" id="editAddress"
+                                   value="${escapeHtml(r.UPDATE_ADDRESS || '')}"
+                                   style="text-transform:uppercase;"
+                                   oninput="this.value=this.value.toUpperCase();">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            Phone <span class="required-asterisk">*</span>
+                        </label>
+                        <input type="tel" class="form-control" id="editPhone"
+                               value="${escapeHtml(r.PHONE_UPDATE || '')}" maxlength="10">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            Email <span class="required-asterisk">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                            <input type="text" class="form-control" id="editEmail"
+                                   value="${escapeHtml(r.EMAIL_UPDATE || '')}">
+                        </div>
+                    </div>
+
                 </div>
             </div>
-            <div class="col-md-6">
-                <label class="form-label">Gender</label>
-                <select class="form-select" id="editGender">
-                    <option value="">Select...</option>
-                    <option value="MALE"   ${(r.GENDER_UPDATE || '').toUpperCase() === 'MALE' ? 'selected' : ''}>Male</option>
-                    <option value="FEMALE" ${(r.GENDER_UPDATE || '').toUpperCase() === 'FEMALE' ? 'selected' : ''}>Female</option>
-                    <option value="OTHER"  ${(r.GENDER_UPDATE || '').toUpperCase() === 'OTHER' ? 'selected' : ''}>Other</option>
-                </select>
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">Cast</label>
-                <input type="text" class="form-control uppercase-input" id="editCast"
-                       value="${escapeHtml(r.CAST_UPDATE || '')}" style="text-transform:uppercase;">
-            </div>
-        </div>
-    </div>
-`;
+        `;
 
-    if (doc.template_type === 'minor_template') {
+        // ── Section 2: Child Details ─────────────────────────────
         html += `
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon"><i class="bi bi-emoji-smile"></i></div>
+                    <div class="section-icon" style="background:var(--primary-gray,#6c757d);">
+                        <i class="bi bi-emoji-smile"></i>
+                    </div>
                     <h6 class="section-title">Child Details</h6>
                 </div>
                 <div class="row g-3">
+
+                    <!-- Child Old Name with Alias -->
                     <div class="col-md-6">
-                        <label class="form-label">Father/Mother Name</label>
-                        <input type="text" class="form-control uppercase-input" id="editFatherMother"
-                               value="${r['FATHER-MOTHER_NAME'] || ''}" style="text-transform:uppercase;">
+                        <label class="form-label">
+                            Child Old Name <span class="required-asterisk">*</span>
+                            <small class="text-muted">(+alias)</small>
+                        </label>
+                        <div style="display:flex; gap:0.5rem; align-items:flex-start;">
+                            <div class="input-group flex-grow-1">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <input type="text" class="form-control" id="editOldName"
+                                       value="${escapeHtml(parsedBaseName)}"
+                                       style="text-transform:uppercase;"
+                                       oninput="this.value=this.value.toUpperCase();
+                                                updateEditAliasPreview();">
+                            </div>
+                            <button type="button"
+                                    title="Add Alias"
+                                    onclick="addEditAliasField()"
+                                    style="background:linear-gradient(135deg,#1a1a1a 0%,#444 100%);
+                                           border:none; color:white; padding:0;
+                                           border-radius:8px; width:42px; height:42px;
+                                           min-width:42px; display:flex; align-items:center;
+                                           justify-content:center; cursor:pointer;
+                                           flex-shrink:0; transition:all 0.2s ease;"
+                                    onmouseover="this.style.opacity='0.85'"
+                                    onmouseout="this.style.opacity='1'">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+
+                        <!-- Alias fields container -->
+                        <div id="editAliasContainer" style="margin-top:0.5rem;"></div>
+
+                        <!-- Alias counter -->
+                        <div id="editAliasCounter"
+                             style="display:none; margin-top:0.5rem; padding:0.35rem 0.65rem;
+                                    background:#f8f9fa; border-radius:6px;
+                                    font-size:0.75rem; color:#6c757d;">
+                            <i class="bi bi-tags me-1"></i>Aliases: <span class="count">0</span>
+                        </div>
+
+                        <!-- Alias preview -->
+                        <div id="editAliasPreview"
+                             style="display:none; margin-top:0.75rem; padding:0.75rem;
+                                    background:#f8f9fa; border-radius:8px;
+                                    border:1px solid #dee2e6;">
+                            <div style="font-size:0.75rem; font-weight:600; color:#6c757d;
+                                        margin-bottom:0.5rem; text-transform:uppercase;
+                                        letter-spacing:0.3px;">
+                                <i class="bi bi-eye me-1"></i>Preview:
+                            </div>
+                            <div id="editAliasPreviewText" style="word-break:break-word;"></div>
+                        </div>
                     </div>
+
                     <div class="col-md-6">
-                        <label class="form-label">Son/Daughter</label>
-                        <select class="form-select" id="editSonDaughter">
+                        <label class="form-label">Child New Name <span class="required-asterisk">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person-check"></i></span>
+                            <input type="text" class="form-control" id="editNewName"
+                                   value="${escapeHtml(r.NEW_NAME || '')}"
+                                   style="text-transform:uppercase;"
+                                   oninput="this.value=this.value.toUpperCase();">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Gender <span class="required-asterisk">*</span></label>
+                        <select class="form-select" id="editGender">
                             <option value="">Select...</option>
-                            <option value="son"      ${(r['SON-DAUGHTER'] || '').toLowerCase() === 'son' ? 'selected' : ''}>Son</option>
-                            <option value="daughter" ${(r['SON-DAUGHTER'] || '').toLowerCase() === 'daughter' ? 'selected' : ''}>Daughter</option>
+                            <option value="MALE"
+                                ${(r.GENDER_UPDATE || '').toUpperCase() === 'MALE' ? 'selected' : ''}>
+                                Male
+                            </option>
+                            <option value="FEMALE"
+                                ${(r.GENDER_UPDATE || '').toUpperCase() === 'FEMALE' ? 'selected' : ''}>
+                                Female
+                            </option>
+                            <option value="OTHER"
+                                ${(r.GENDER_UPDATE || '').toUpperCase() === 'OTHER' ? 'selected' : ''}>
+                                Other
+                            </option>
                         </select>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Age</label>
-                        <input type="number" class="form-control" id="editAge" value="${r.UPDATE_AGE || ''}">
+
+                    <div class="col-md-6">
+                        <label class="form-label">Son/Daughter <span class="required-asterisk">*</span></label>
+                        <select class="form-select" id="editSonDaughter">
+                            <option value="">Select...</option>
+                            <option value="son"
+                                ${(r['SON-DAUGHTER'] || '').toLowerCase() === 'son' ? 'selected' : ''}>
+                                Son
+                            </option>
+                            <option value="daughter"
+                                ${(r['SON-DAUGHTER'] || '').toLowerCase() === 'daughter' ? 'selected' : ''}>
+                                Daughter
+                            </option>
+                        </select>
                     </div>
+
                     <div class="col-md-4">
-                        <label class="form-label">Date of Birth</label>
-                        <input type="text" class="form-control" id="editChildDob"
-                               value="${r.CHILD_DOB || ''}" placeholder="DD/MM/YYYY">
+                        <label class="form-label">Date of Birth <span class="required-asterisk">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-calendar"></i></span>
+                            <input type="text" class="form-control" id="editChildDob"
+                                   value="${escapeHtml(r.CHILD_DOB || '')}"
+                                   placeholder="DD/MM/YYYY">
+                        </div>
                     </div>
+
                     <div class="col-md-4">
-                        <label class="form-label">Birth Place</label>
-                        <input type="text" class="form-control uppercase-input" id="editBirthPlace"
-                               value="${r.BIRTH_PLACE || ''}" style="text-transform:uppercase;">
+                        <label class="form-label">Age <span class="required-asterisk">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-hash"></i></span>
+                            <input type="number" class="form-control" id="editAge"
+                                   value="${escapeHtml(String(r.UPDATE_AGE || ''))}"
+                                   min="0" max="17">
+                            <span class="input-group-text">years</span>
+                        </div>
                     </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Birth Place <span class="required-asterisk">*</span></label>
+                        <input type="text" class="form-control" id="editBirthPlace"
+                               value="${escapeHtml(r.BIRTH_PLACE || '')}"
+                               style="text-transform:uppercase;"
+                               oninput="this.value=this.value.toUpperCase();">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Religion/Cast <span class="required-asterisk">*</span></label>
+                        <input type="text" class="form-control" id="editCast"
+                               value="${escapeHtml(r.CAST_UPDATE || '')}"
+                               style="text-transform:uppercase;"
+                               oninput="this.value=this.value.toUpperCase();">
+                    </div>
+
+                </div>
+            </div>
+        `;
+
+    } else {
+        // ============================================================
+        // MAJOR & RELIGION TEMPLATES - Personal Details
+        // ============================================================
+        html += `
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon"><i class="bi bi-person-fill"></i></div>
+                    <h6 class="section-title">Personal Details</h6>
+                </div>
+                <div class="row g-3">
+
+                    <!-- Old Name with Alias -->
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            Old Name <span class="required-asterisk">*</span>
+                            <small class="text-muted">(+alias)</small>
+                        </label>
+                        <div style="display:flex; gap:0.5rem; align-items:flex-start;">
+                            <div class="input-group flex-grow-1">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <input type="text" class="form-control" id="editOldName"
+                                       value="${escapeHtml(parsedBaseName)}"
+                                       style="text-transform:uppercase;"
+                                       oninput="this.value=this.value.toUpperCase();
+                                                updateEditAliasPreview();">
+                            </div>
+                            <button type="button"
+                                    title="Add Alias"
+                                    onclick="addEditAliasField()"
+                                    style="background:linear-gradient(135deg,#1a1a1a 0%,#444 100%);
+                                           border:none; color:white; padding:0;
+                                           border-radius:8px; width:42px; height:42px;
+                                           min-width:42px; display:flex; align-items:center;
+                                           justify-content:center; cursor:pointer;
+                                           flex-shrink:0; transition:all 0.2s ease;"
+                                    onmouseover="this.style.opacity='0.85'"
+                                    onmouseout="this.style.opacity='1'">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+
+                        <!-- Alias fields container -->
+                        <div id="editAliasContainer" style="margin-top:0.5rem;"></div>
+
+                        <!-- Alias counter -->
+                        <div id="editAliasCounter"
+                             style="display:none; margin-top:0.5rem; padding:0.35rem 0.65rem;
+                                    background:#f8f9fa; border-radius:6px;
+                                    font-size:0.75rem; color:#6c757d;">
+                            <i class="bi bi-tags me-1"></i>Aliases: <span class="count">0</span>
+                        </div>
+
+                        <!-- Alias preview -->
+                        <div id="editAliasPreview"
+                             style="display:none; margin-top:0.75rem; padding:0.75rem;
+                                    background:#f8f9fa; border-radius:8px;
+                                    border:1px solid #dee2e6;">
+                            <div style="font-size:0.75rem; font-weight:600; color:#6c757d;
+                                        margin-bottom:0.5rem; text-transform:uppercase;
+                                        letter-spacing:0.3px;">
+                                <i class="bi bi-eye me-1"></i>Preview:
+                            </div>
+                            <div id="editAliasPreviewText" style="word-break:break-word;"></div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">New Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person-check"></i></span>
+                            <input type="text" class="form-control" id="editNewName"
+                                   value="${escapeHtml(r.NEW_NAME || '')}"
+                                   style="text-transform:uppercase;"
+                                   oninput="this.value=this.value.toUpperCase();">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Relation</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-people"></i></span>
+                            <select class="form-select" id="editRelation"
+                                    onchange="handleRelationChange()">
+                                <option value="">Select...</option>
+                                <option value="S/o" ${relation === 'S/o' ? 'selected' : ''}>
+                                    S/o (Son of)
+                                </option>
+                                <option value="D/o" ${relation === 'D/o' ? 'selected' : ''}>
+                                    D/o (Daughter of)
+                                </option>
+                                <option value="W/o" ${relation === 'W/o' ? 'selected' : ''}>
+                                    W/o (Wife of)
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Father/Spouse Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person-heart"></i></span>
+                            <input type="text" class="form-control" id="editFatherSpouse"
+                                   value="${escapeHtml(r['FATHER-SPOUSE_NAME'] || '')}"
+                                   style="text-transform:uppercase;"
+                                   oninput="this.value=this.value.toUpperCase();">
+                        </div>
+                    </div>
+
+                    <!-- Dual Relation (D/o & W/o) -->
+                    <div class="col-12" id="dualRelationContainer"
+                         style="display:${hasSpouse || relation === 'D/o' ? 'block' : 'none'};">
+                        <div class="dual-relation-card">
+                            <div class="card-header">
+                                <i class="bi bi-heart-fill me-2"></i>
+                                D/o & W/o - Additional Spouse Details
+                            </div>
+                            <div class="card-body p-3">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Spouse Name</label>
+                                        <input type="text" class="form-control" id="editSpouseName1"
+                                               value="${escapeHtml(r.SPOUSE_NAME1 || '')}"
+                                               style="text-transform:uppercase;"
+                                               oninput="this.value=this.value.toUpperCase();">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check mt-4">
+                                            <input class="form-check-input" type="checkbox"
+                                                   id="editHasSpouse"
+                                                   ${hasSpouse ? 'checked' : ''}
+                                                   onchange="toggleSpouseFields()">
+                                            <label class="form-check-label" for="editHasSpouse">
+                                                Include W/o (Wife of) in document
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Gender</label>
+                        <select class="form-select" id="editGender">
+                            <option value="">Select...</option>
+                            <option value="MALE"
+                                ${(r.GENDER_UPDATE || '').toUpperCase() === 'MALE' ? 'selected' : ''}>
+                                Male
+                            </option>
+                            <option value="FEMALE"
+                                ${(r.GENDER_UPDATE || '').toUpperCase() === 'FEMALE' ? 'selected' : ''}>
+                                Female
+                            </option>
+                            <option value="OTHER"
+                                ${(r.GENDER_UPDATE || '').toUpperCase() === 'OTHER' ? 'selected' : ''}>
+                                Other
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Religion/Cast</label>
+                        <input type="text" class="form-control" id="editCast"
+                               value="${escapeHtml(r.CAST_UPDATE || '')}"
+                               style="text-transform:uppercase;"
+                               oninput="this.value=this.value.toUpperCase();">
+                    </div>
+
                 </div>
             </div>
         `;
     }
 
+    // ── Contact Details (common for all templates) ──────────────
     html += `
         <div class="form-section">
             <div class="section-header">
@@ -1302,23 +1605,46 @@ function buildEditForm(doc) {
                 <h6 class="section-title">Contact Details</h6>
             </div>
             <div class="row g-3">
+                ${doc.template_type !== 'minor_template' ? `
                 <div class="col-md-6">
                     <label class="form-label">Phone Number</label>
                     <input type="tel" class="form-control" id="editPhone"
-                           value="${r.PHONE_UPDATE || ''}" maxlength="10">
+                           value="${escapeHtml(r.PHONE_UPDATE || '')}" maxlength="10">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Email</label>
-                    <input type="email" class="form-control" id="editEmail"
-                           value="${r.EMAIL_UPDATE || ''}">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                        <input type="text" class="form-control" id="editEmail"
+                               value="${escapeHtml(r.EMAIL_UPDATE || '')}">
+                    </div>
                 </div>
                 <div class="col-12">
                     <label class="form-label">Address</label>
-                    <textarea class="form-control uppercase-input" id="editAddress" rows="2"
-                              style="text-transform:uppercase;">${r.UPDATE_ADDRESS || ''}</textarea>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-house"></i></span>
+                        <textarea class="form-control" id="editAddress" rows="2"
+                                  style="text-transform:uppercase;"
+                                  oninput="this.value=this.value.toUpperCase();"
+                        >${escapeHtml(r.UPDATE_ADDRESS || '')}</textarea>
+                    </div>
                 </div>
+                ` : `
+                <!-- For minor template, phone/email/address already shown above -->
+                <div class="col-12">
+                    <div class="alert alert-info py-2 mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Phone, Email and Address are managed in the
+                        <strong>Parent / Guardian Details</strong> section above.
+                    </div>
+                </div>
+                `}
             </div>
         </div>
+    `;
+
+    // ── Date Details (common for all templates) ─────────────────
+    html += `
         <div class="form-section">
             <div class="section-header">
                 <div class="section-icon"><i class="bi bi-calendar-event"></i></div>
@@ -1327,16 +1653,28 @@ function buildEditForm(doc) {
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">Numeric Date</label>
-                    <input type="text" class="form-control" id="editNumDate"
-                           value="${r.NUM_DATE || ''}" placeholder="DD/MM/YYYY">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-calendar"></i></span>
+                        <input type="text" class="form-control" id="editNumDate"
+                               value="${escapeHtml(r.NUM_DATE || '')}"
+                               placeholder="DD/MM/YYYY">
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Alphabetic Date</label>
-                    <input type="text" class="form-control" id="editAlphaDate"
-                           value="${r.ALPHA_DATE || ''}" placeholder="1ST JANUARY 2025">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-calendar2-check"></i></span>
+                        <input type="text" class="form-control" id="editAlphaDate"
+                               value="${escapeHtml(r.ALPHA_DATE || '')}"
+                               placeholder="1ST JANUARY 2025">
+                    </div>
                 </div>
             </div>
         </div>
+    `;
+
+    // ── Witness 1 (common for all templates) ────────────────────
+    html += `
         <div class="form-section">
             <div class="section-header">
                 <div class="section-icon"><i class="bi bi-person-badge"></i></div>
@@ -1345,21 +1683,29 @@ function buildEditForm(doc) {
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label">Name</label>
-                    <input type="text" class="form-control uppercase-input" id="editWitness1Name"
-                           value="${r.WITNESS_NAME1 || ''}" style="text-transform:uppercase;">
+                    <input type="text" class="form-control" id="editWitness1Name"
+                           value="${escapeHtml(r.WITNESS_NAME1 || '')}"
+                           style="text-transform:uppercase;"
+                           oninput="this.value=this.value.toUpperCase();">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Phone</label>
                     <input type="tel" class="form-control" id="editWitness1Phone"
-                           value="${r.WITNESS_PHONE1 || ''}" maxlength="10">
+                           value="${escapeHtml(r.WITNESS_PHONE1 || '')}" maxlength="10">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Address</label>
-                    <input type="text" class="form-control uppercase-input" id="editWitness1Address"
-                           value="${r.WITNESS_ADDRESS1 || ''}" style="text-transform:uppercase;">
+                    <input type="text" class="form-control" id="editWitness1Address"
+                           value="${escapeHtml(r.WITNESS_ADDRESS1 || '')}"
+                           style="text-transform:uppercase;"
+                           oninput="this.value=this.value.toUpperCase();">
                 </div>
             </div>
         </div>
+    `;
+
+    // ── Witness 2 (common for all templates) ────────────────────
+    html += `
         <div class="form-section">
             <div class="section-header">
                 <div class="section-icon"><i class="bi bi-person-badge-fill"></i></div>
@@ -1368,24 +1714,30 @@ function buildEditForm(doc) {
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label">Name</label>
-                    <input type="text" class="form-control uppercase-input" id="editWitness2Name"
-                           value="${r.WITNESS_NAME2 || ''}" style="text-transform:uppercase;">
+                    <input type="text" class="form-control" id="editWitness2Name"
+                           value="${escapeHtml(r.WITNESS_NAME2 || '')}"
+                           style="text-transform:uppercase;"
+                           oninput="this.value=this.value.toUpperCase();">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Phone</label>
                     <input type="tel" class="form-control" id="editWitness2Phone"
-                           value="${r.WITNESS_PHONE2 || ''}" maxlength="10">
+                           value="${escapeHtml(r.WITNESS_PHONE2 || '')}" maxlength="10">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Address</label>
-                    <input type="text" class="form-control uppercase-input" id="editWitness2Address"
-                           value="${r.WITNESS_ADDRESS2 || ''}" style="text-transform:uppercase;">
+                    <input type="text" class="form-control" id="editWitness2Address"
+                           value="${escapeHtml(r.WITNESS_ADDRESS2 || '')}"
+                           style="text-transform:uppercase;"
+                           oninput="this.value=this.value.toUpperCase();">
                 </div>
             </div>
         </div>
     `;
 
-    if (doc.template_type === 'major_template' || doc.template_type === 'religion_template') {
+    // ── Folder Type (major & religion only) ─────────────────────
+    if (doc.template_type === 'major_template' ||
+        doc.template_type === 'religion_template') {
         html += `
             <div class="form-section">
                 <div class="section-header">
@@ -1396,8 +1748,14 @@ function buildEditForm(doc) {
                     <div class="col-md-6">
                         <label class="form-label">Folder Type</label>
                         <select class="form-select" id="editFolderType">
-                            <option value="main"      ${folderType === 'main' ? 'selected' : ''}>Main Template (Married)</option>
-                            <option value="unmarried" ${folderType === 'unmarried' ? 'selected' : ''}>Unmarried Template</option>
+                            <option value="main"
+                                ${folderType === 'main' ? 'selected' : ''}>
+                                Main Template (Married)
+                            </option>
+                            <option value="unmarried"
+                                ${folderType === 'unmarried' ? 'selected' : ''}>
+                                Unmarried Template
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -1420,6 +1778,26 @@ function handleRelationChange() {
         const hasSpouseCheck = document.getElementById('editHasSpouse');
         if (spouseInput) spouseInput.value = '';
         if (hasSpouseCheck) hasSpouseCheck.checked = false;
+    }
+}
+
+function handleMinorRelationChangeEdit() {
+    const relation = document.getElementById('editRelation')?.value;
+    const normalField = document.getElementById('editMinorNormalSpouseField');
+    const dualField = document.getElementById('editMinorDualRelationFields');
+    const spouseInput = document.getElementById('editFatherSpouse');
+
+    if (relation === 'D/o & W/o') {
+        if (normalField) normalField.style.display = 'none';
+        if (dualField) dualField.style.display = 'block';
+        if (spouseInput) spouseInput.value = '';
+    } else {
+        if (normalField) normalField.style.display = 'block';
+        if (dualField) dualField.style.display = 'none';
+        const guardianFather = document.getElementById('editGuardianFather');
+        const guardianSpouse = document.getElementById('editGuardianSpouse');
+        if (guardianFather) guardianFather.value = '';
+        if (guardianSpouse) guardianSpouse.value = '';
     }
 }
 
@@ -1480,21 +1858,42 @@ async function saveDocumentChanges() {
     }
 
     if (doc.template_type === 'minor_template') {
+        // Guardian/Parent fields
         replacements['FATHER-MOTHER_NAME'] =
             document.getElementById('editFatherMother')?.value.toUpperCase().trim() || '';
+        replacements['FATHER-SPOUSE_NAME'] =
+            document.getElementById('editFatherSpouse')?.value.toUpperCase().trim() || '';
+
+        // Handle D/o & W/o for minor
+        const minorRelation = document.getElementById('editRelation')?.value || '';
+        replacements.UPDATE_RELATION = minorRelation;
+
+        if (minorRelation === 'D/o & W/o') {
+            replacements.GUARDIAN_FATHER_NAME =
+                document.getElementById('editGuardianFather')?.value.toUpperCase().trim() || '';
+            replacements.GUARDIAN_SPOUSE_NAME =
+                document.getElementById('editGuardianSpouse')?.value.toUpperCase().trim() || '';
+            replacements['FATHER-SPOUSE_NAME'] = '';
+        }
+
+        // Child fields
         replacements['SON-DAUGHTER'] =
             (document.getElementById('editSonDaughter')?.value || '').toLowerCase().trim();
-        replacements.UPDATE_AGE = document.getElementById('editAge')?.value || '';
-        replacements.CHILD_DOB = document.getElementById('editChildDob')?.value || '';
+        replacements.UPDATE_AGE =
+            document.getElementById('editAge')?.value || '';
+        replacements.CHILD_DOB =
+            document.getElementById('editChildDob')?.value || '';
         replacements.BIRTH_PLACE =
             document.getElementById('editBirthPlace')?.value.toUpperCase().trim() || '';
+        replacements.CAST_UPDATE =
+            document.getElementById('editCast')?.value.toUpperCase().trim() || '';
 
+        // HE_SHE based on son/daughter
         const sd = replacements['SON-DAUGHTER'];
-        replacements.HE_SHE = sd === 'son' ? 'he' : sd === 'daughter' ? 'she' : (() => {
-            const g = (replacements.GENDER_UPDATE || '').toUpperCase();
-            return g === 'MALE' ? 'he' : g === 'FEMALE' ? 'she' : 'he/she';
-        })();
+        replacements.HE_SHE = sd === 'son' ? 'he' : sd === 'daughter' ? 'she' : 'he/she';
+
     } else {
+        // Major & Religion
         const g = (replacements.GENDER_UPDATE || '').toUpperCase();
         replacements.HE_SHE = g === 'MALE' ? 'he' : g === 'FEMALE' ? 'she' : 'he/she';
     }
